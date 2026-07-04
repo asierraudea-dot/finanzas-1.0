@@ -1,67 +1,79 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from datetime import datetime
 
 st.set_page_config(page_title="Finanzas Fáciles", page_icon="💰", layout="centered")
 
 st.title("💰 Finanzas Fáciles")
-st.subheader("Planeación financiera simple para ingresos limitados")
+st.subheader("Administración inteligente de tus ingresos")
 
-st.sidebar.header("Tu Perfil Financiero")
-ingreso_mensual = st.sidebar.number_input("Ingreso mensual (COP)", min_value=0, value=1200000, step=50000)
+# Registro inicial
+st.header("📋 Registro de Ingresos y Gastos")
 
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Dashboard", "💸 Registrar Gastos", "🎯 Metas", "💡 Recomendaciones"])
+ingreso_mensual = st.number_input("¿Cuál es tu ingreso mensual total? (COP)", min_value=0, value=1200000, step=50000)
 
-with tab1:
-    st.header("Resumen Financiero")
-    if ingreso_mensual > 0:
-        gastos = {
-            'Alimentación': 450000,
-            'Transporte': 150000,
-            'Servicios': 120000,
-            'Vivienda': 300000,
-            'Otros': 80000
-        }
-        total_gastos = sum(gastos.values())
-        ahorro = ingreso_mensual - total_gastos
-        
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Ingreso", f"${ingreso_mensual:,.0f}")
-        col2.metric("Gastos", f"${total_gastos:,.0f}")
-        col3.metric("Ahorro", f"${ahorro:,.0f}", delta="Positivo" if ahorro > 0 else "Negativo")
-        
-        df_gastos = pd.DataFrame(list(gastos.items()), columns=['Categoría', 'Monto'])
-        fig = px.pie(df_gastos, names='Categoría', values='Monto', title="Distribución de Gastos")
-        st.plotly_chart(fig, use_container_width=True)
+st.subheader("Distribución actual de tus gastos")
 
-with tab2:
-    st.header("Registrar Gastos")
-    cat = st.selectbox("Categoría", ["Alimentación", "Transporte", "Servicios", "Vivienda", "Salud", "Educación", "Otros"])
-    monto = st.number_input("Monto (COP)", min_value=0)
-    if st.button("Guardar Gasto"):
-        st.success(f"✅ Gasto de ${monto:,.0f} en {cat} registrado.")
+col1, col2 = st.columns(2)
 
-with tab3:
-    st.header("🎯 Simulador de Metas")
-    meta = st.text_input("¿Qué quieres lograr?", "Fondo de emergencia")
-    monto_meta = st.number_input("Monto objetivo (COP)", min_value=100000)
-    meses = st.slider("¿En cuántos meses?", 3, 36, 12)
-    if st.button("Calcular"):
-        mensual = monto_meta / meses
-        st.success(f"Para lograr tu meta necesitas ahorrar **${mensual:,.0f}** mensuales.")
+with col1:
+    vivienda = st.number_input("Vivienda (arriendo o cuota)", min_value=0, value=350000)
+    alimentacion = st.number_input("Alimentación", min_value=0, value=400000)
+    transporte = st.number_input("Transporte", min_value=0, value=150000)
 
-with tab4:
-    st.header("💡 Recomendaciones")
-    st.info("**Regla recomendada 60/30/10** para ingresos limitados")
-    st.write("• 60% Necesidades básicas")
-    st.write("• 30% Gastos variables")
-    st.write("• 10% Ahorro")
-    
-    st.subheader("Opciones de Ahorro e Inversión Asequibles")
-    st.write("• Cuenta de Ahorro tradicional")
-    st.write("• Fondo de Emergencia (empieza con $30.000 mensuales)")
-    st.write("• Microinversiones en Nequi, Daviplata o Bancolombia")
-    st.write("• Criptomonedas con montos bajos")
+with col2:
+    manutencion = st.number_input("Manutención de niños / familia", min_value=0, value=200000)
+    servicios = st.number_input("Servicios (agua, luz, internet)", min_value=0, value=120000)
+    otros = st.number_input("Otros gastos", min_value=0, value=100000)
 
-st.caption("Finanzas Fáciles © 2026 | Herramienta para una mejor vida financiera")
+total_gastos = vivienda + alimentacion + transporte + manutencion + servicios + otros
+ahorro_actual = ingreso_mensual - total_gastos
+
+# Distribución actual
+data_actual = {
+    'Categoría': ['Vivienda', 'Alimentación', 'Transporte', 'Manutención', 'Servicios', 'Otros', 'Ahorro'],
+    'Monto': [vivienda, alimentacion, transporte, manutencion, servicios, otros, max(0, ahorro_actual)]
+}
+
+df_actual = pd.DataFrame(data_actual)
+
+st.subheader("📊 Tu Distribución Actual")
+fig_actual = px.pie(df_actual, names='Categoría', values='Monto', title="Distribución Actual de Ingresos")
+st.plotly_chart(fig_actual, use_container_width=True)
+
+st.metric("Ahorro Actual", f"${ahorro_actual:,.0f}", delta="Negativo" if ahorro_actual < 0 else "Positivo")
+
+# Distribución Ideal
+st.subheader("🌟 Distribución Ideal Recomendada")
+st.info("**Regla recomendada para ingresos limitados: 60% Necesidades - 25% Deseos - 15% Ahorro**")
+
+ideal = {
+    'Vivienda': ingreso_mensual * 0.25,
+    'Alimentación': ingreso_mensual * 0.20,
+    'Transporte': ingreso_mensual * 0.10,
+    'Manutención': ingreso_mensual * 0.10,
+    'Servicios': ingreso_mensual * 0.08,
+    'Otros': ingreso_mensual * 0.07,
+    'Ahorro': ingreso_mensual * 0.20
+}
+
+df_ideal = pd.DataFrame(list(ideal.items()), columns=['Categoría', 'Monto Ideal'])
+
+fig_ideal = px.pie(df_ideal, names='Categoría', values='Monto Ideal', title="Distribución Ideal Recomendada")
+st.plotly_chart(fig_ideal, use_container_width=True)
+
+# Recomendaciones
+st.subheader("💡 Recomendaciones para mejorar tu gestión")
+if ahorro_actual < ingreso_mensual * 0.10:
+    st.error("Estás gastando más de lo que ingresas o ahorrando muy poco. Prioriza reducir gastos variables.")
+elif ahorro_actual < ingreso_mensual * 0.15:
+    st.warning("Buen esfuerzo, pero puedes mejorar. Intenta ahorrar al menos el 15%.")
+else:
+    st.success("¡Excelente gestión! Sigue así.")
+
+st.write("**Consejos prácticos:**")
+st.write("- Reduce gastos en transporte usando transporte público o bicicleta.")
+st.write("- Busca opciones más económicas para alimentación (mercados locales).")
+st.write("- Crea un fondo de emergencia aunque sea con $30.000 mensuales.")
+
+st.caption("Finanzas Fáciles © 2026 | Herramienta simple para una mejor vida financiera")
