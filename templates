@@ -1,0 +1,1064 @@
+{% extends "base.html" %}
+{% set current_user = nombre %}
+{% block title %}{{ titulo }} — FinTrack CO{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="topbar">
+    <div><div class="page-title">{{ titulo }}</div></div>
+    <div class="top-actions">
+      <button class="btn btn-primary btn-sm" onclick="openModal('modal-add')"><i class="ti ti-plus"></i> Agregar</button>
+    </div>
+  </div>
+  <div class="alert alert-info">ℹ️ <div>Esta sección está disponible. Registra tu primer elemento usando el botón <b>Agregar</b>.</div></div>
+  <div class="card">
+    <div class="card-body" id="tabla-contenido">
+      <div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Sin registros aún.</div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% extends "base.html" %}
+{% set current_user = nombre %}
+{% set active = "renta_fija" %}
+{% block title %}Renta Fija — FinTrack CO{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="topbar">
+    <div><div class="page-title">Renta Fija</div><div class="page-sub">CDT · TES · Bonos · Cuentas remuneradas · Fiducias</div></div>
+    <div class="top-actions">
+      <button class="btn btn-primary btn-sm" onclick="openModal('modal-add')"><i class="ti ti-plus"></i> Nueva inversión</button>
+    </div>
+  </div>
+
+  <div class="alert alert-info">ℹ️ <div><b>Periodos disponibles:</b> <b>Diario</b> → Nu, Lulo, Nequi cajita (rendimiento cada día) · <b>Mensual</b> → CDT mensual, Fondo SiRenta · <b>Vencimiento</b> → CDT acumulado</div></div>
+
+  <div class="kpi-grid g3">
+    <div class="kpi"><div class="kpi-label">Total RF activo</div><div class="kpi-val" id="rf-tot">$0</div></div>
+    <div class="kpi"><div class="kpi-label">Rend. diario total</div><div class="kpi-val up" id="rf-dia">$0</div><div class="kpi-sub">Todas las inversiones activas</div></div>
+    <div class="kpi"><div class="kpi-label">Rend. anual proyectado</div><div class="kpi-val up" id="rf-año">$0</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><div class="card-title">Mis inversiones de renta fija</div></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Producto</th><th>Canal</th><th>Monto</th><th>Tasa E.A.</th><th>Comisión</th><th>Tasa neta</th><th>Período pago</th><th style="background:#f0fdf4">Rend. diario</th><th>Rend. período</th><th>Rend. anual</th><th>Acumulado</th><th>Inicio</th><th>Vence</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody id="tabla-rf"><tr><td colspan="15"><div class="empty"><div class="empty-icon">🏦</div>Sin inversiones registradas</div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AGREGAR / EDITAR -->
+<div class="modal-overlay" id="modal-add" onclick="if(event.target===this)closeModal('modal-add')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Nueva inversión de renta fija</div>
+      <button class="btn-icon btn-sm" onclick="closeModal('modal-add')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id"/>
+      <div class="form-grid g2f">
+        <div class="form-group"><label>Tipo de producto</label>
+          <select id="f-tipo">
+            <option>Cuenta remunerada Nu Colombia</option>
+            <option>Cuenta remunerada Lulo Bank</option>
+            <option>Cajita Nequi / Daviplata</option>
+            <option>Cajita Ualá</option>
+            <option>CDT Bancolombia</option>
+            <option>CDT Davivienda</option>
+            <option>CDT Nu Colombia</option>
+            <option>CDT BBVA</option>
+            <option>TES Renta Fija</option>
+            <option>TES UVR</option>
+            <option>Bono Corporativo</option>
+            <option>FIC Mercado Monetario</option>
+            <option>Fiducia mercado monetario</option>
+            <option>Fondo Inmobiliario (SiRenta)</option>
+            <option>Otro CDT / Título</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Canal / Plataforma</label>
+          <select id="f-canal">
+            <option>Nu Colombia</option><option>Lulo Bank</option><option>Nequi</option>
+            <option>Daviplata Inversiones</option><option>Ualá</option>
+            <option>App Bancolombia</option><option>App Davivienda</option><option>Tyba (Credicorp)</option>
+            <option>MejorCDT</option><option>Valores Bancolombia</option><option>Trii</option>
+            <option>Acciones y Valores</option><option>Otro</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Monto invertido (COP $)</label><input type="number" id="f-monto" placeholder="1100000"/></div>
+        <div class="form-group"><label>Tasa E.A. bruta (%)</label><input type="number" id="f-tasa" step="0.01" placeholder="12.4"/></div>
+        <div class="form-group"><label>Comisión administración E.A. (%)</label><input type="number" id="f-com" step="0.01" placeholder="1.0" value="0"/></div>
+        <div class="form-group"><label>Período de pago de rendimientos</label>
+          <select id="f-periodo" onchange="updatePeriodHint()">
+            <option value="diario">Diario (Nu, Lulo, Nequi cajita)</option>
+            <option value="mensual" selected>Mensual (CDT mensual, SiRenta)</option>
+            <option value="trimestral">Trimestral</option>
+            <option value="semestral">Semestral (TES)</option>
+            <option value="anual">Anual</option>
+            <option value="vencimiento">Al vencimiento (CDT acumulado)</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Fecha de inicio</label><input type="date" id="f-ini"/></div>
+        <div class="form-group"><label>Fecha de vencimiento</label><input type="date" id="f-vence"/></div>
+        <div class="form-group"><label>Estado</label>
+          <select id="f-estado"><option value="activo">Activo</option><option value="vencido">Vencido / Cobrado</option><option value="pendiente">Pendiente apertura</option></select>
+        </div>
+        <div class="form-group full"><label>Notas</label><input type="text" id="f-notas" placeholder="Renovación automática, condiciones, observaciones…"/></div>
+      </div>
+      <!-- Preview rendimientos -->
+      <div id="preview-rend" style="display:none;margin-top:16px;background:var(--bg);border-radius:var(--r);padding:14px">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Vista previa de rendimientos</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;text-align:center">
+          <div><div style="font-size:10px;color:var(--muted)">Diario</div><div class="mono up" id="pr-dia" style="font-size:14px;font-weight:600"></div></div>
+          <div><div style="font-size:10px;color:var(--muted)">Mensual</div><div class="mono up" id="pr-mes" style="font-size:14px;font-weight:600"></div></div>
+          <div><div style="font-size:10px;color:var(--muted)">Anual</div><div class="mono up" id="pr-año" style="font-size:14px;font-weight:600"></div></div>
+          <div><div style="font-size:10px;color:var(--muted)">Tasa neta</div><div class="mono" id="pr-neta" style="font-size:14px;font-weight:600;color:var(--blue)"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-add')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardar()"><i class="ti ti-device-floppy"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Preview de rendimientos en tiempo real
+['f-monto','f-tasa','f-com','f-periodo'].forEach(id => {
+  document.getElementById(id).addEventListener('input', calcPreview);
+  document.getElementById(id).addEventListener('change', calcPreview);
+});
+
+function calcPreview(){
+  const monto  = parseFloat(document.getElementById('f-monto').value)||0;
+  const tasa   = parseFloat(document.getElementById('f-tasa').value)||0;
+  const com    = parseFloat(document.getElementById('f-com').value)||0;
+  const neta   = Math.max(0, tasa-com);
+  const ea     = neta/100;
+  if(!monto||!ea){ document.getElementById('preview-rend').style.display='none'; return; }
+
+  const rDia = monto*(Math.pow(1+ea,1/365)-1);
+  const rMes = monto*(Math.pow(1+ea,1/12)-1);
+  const rAño = monto*ea;
+
+  document.getElementById('pr-dia').textContent = '+'+COP(rDia);
+  document.getElementById('pr-mes').textContent = '+'+COP(rMes);
+  document.getElementById('pr-año').textContent = '+'+COP(rAño);
+  document.getElementById('pr-neta').textContent = Pct(neta);
+  document.getElementById('preview-rend').style.display='block';
+}
+
+function updatePeriodHint(){ calcPreview(); }
+
+async function cargar(){
+  const rows = await apiGet('/api/renta_fija');
+  const tbody = document.getElementById('tabla-rf');
+  if(!rows.length){
+    tbody.innerHTML='<tr><td colspan="15"><div class="empty"><div class="empty-icon">🏦</div>Sin inversiones. Agrega tu primera inversión de renta fija.</div></td></tr>';
+    document.getElementById('rf-tot').textContent='$0';
+    document.getElementById('rf-dia').textContent='$0';
+    document.getElementById('rf-año').textContent='$0';
+    return;
+  }
+
+  let totM=0, totD=0, totA=0;
+  const PCLS = {diario:'period-diario',mensual:'period-mensual',trimestral:'period-trimestral',semestral:'period-semestral',anual:'period-anual',vencimiento:'period-vencimiento'};
+
+  tbody.innerHTML = rows.map(r => {
+    totM += r.monto||0;
+    totD += r.rend_diario||0;
+    totA += r.rend_anual||0;
+    const dv = r.dias_para_vencer;
+    const vHtml = r.vence
+      ? `<span class="tag ${dv<0?'tag-red':dv<=30?'tag-amber':'tag-green'}">${dv<0?'Vencido':r.vence}</span>`
+      : '—';
+    return `<tr>
+      <td><b>${r.tipo}</b>${r.notas?'<br><span style="font-size:10px;color:var(--muted)">'+r.notas+'</span>':''}</td>
+      <td style="color:var(--muted)">${r.canal}</td>
+      <td class="mono">${COP(r.monto)}</td>
+      <td class="mono up">${Pct(r.tasa_ea)}</td>
+      <td class="mono dn">${Pct(r.com_ea)}</td>
+      <td class="mono" style="color:var(--blue)">${Pct(r.tasa_neta)}</td>
+      <td><span class="period-badge ${PCLS[r.periodo]||''}">${r.periodo}</span></td>
+      <td class="t-right"><span class="rend-daily">+${COP(r.rend_diario)}</span></td>
+      <td class="mono t-right up">+${COP(r.rend_periodo)}</td>
+      <td class="mono t-right" style="color:var(--muted)">+${COP(r.rend_anual)}</td>
+      <td class="mono t-right" style="color:var(--purple)">+${COP(r.rend_acumulado)}</td>
+      <td style="color:var(--muted)">${r.ini||'—'}</td>
+      <td>${vHtml}</td>
+      <td><span class="tag ${r.estado==='activo'?'tag-green':r.estado==='vencido'?'tag-red':'tag-amber'}">${r.estado}</span></td>
+      <td>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-edit btn-xs" onclick="editar(${r.id})" title="Editar"><i class="ti ti-pencil"></i></button>
+          <button class="btn btn-danger btn-xs" onclick="eliminar(${r.id})" title="Eliminar"><i class="ti ti-trash"></i></button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('rf-tot').textContent = COP(totM);
+  document.getElementById('rf-dia').textContent = '+'+COP(totD);
+  document.getElementById('rf-año').textContent = '+'+COP(totA);
+}
+
+function resetForm(){
+  ['f-tipo','f-canal','f-monto','f-tasa','f-com','f-periodo','f-ini','f-vence','f-estado','f-notas'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el.tagName==='SELECT') el.selectedIndex=0;
+    else el.value='';
+  });
+  document.getElementById('edit-id').value='';
+  document.getElementById('modal-title').textContent='Nueva inversión de renta fija';
+  document.getElementById('f-ini').value = new Date().toISOString().split('T')[0];
+  document.getElementById('preview-rend').style.display='none';
+}
+
+async function editar(id){
+  const r = await apiGet(`/api/renta_fija/${id}`);
+  document.getElementById('edit-id').value       = id;
+  document.getElementById('f-tipo').value        = r.tipo||'';
+  document.getElementById('f-canal').value       = r.canal||'';
+  document.getElementById('f-monto').value       = r.monto||'';
+  document.getElementById('f-tasa').value        = r.tasa_ea||'';
+  document.getElementById('f-com').value         = r.com_ea||0;
+  document.getElementById('f-periodo').value     = r.periodo||'mensual';
+  document.getElementById('f-ini').value         = r.ini||'';
+  document.getElementById('f-vence').value       = r.vence||'';
+  document.getElementById('f-estado').value      = r.estado||'activo';
+  document.getElementById('f-notas').value       = r.notas||'';
+  document.getElementById('modal-title').textContent = 'Editar inversión';
+  calcPreview();
+  openModal('modal-add');
+}
+
+async function guardar(){
+  const id = document.getElementById('edit-id').value;
+  const data = {
+    tipo:    document.getElementById('f-tipo').value,
+    canal:   document.getElementById('f-canal').value,
+    monto:   parseFloat(document.getElementById('f-monto').value)||0,
+    tasa_ea: parseFloat(document.getElementById('f-tasa').value)||0,
+    com_ea:  parseFloat(document.getElementById('f-com').value)||0,
+    periodo: document.getElementById('f-periodo').value,
+    ini:     document.getElementById('f-ini').value,
+    vence:   document.getElementById('f-vence').value,
+    estado:  document.getElementById('f-estado').value,
+    notas:   document.getElementById('f-notas').value,
+  };
+  if(!data.monto){ toast('Ingresa el monto',false); return; }
+  const r = id
+    ? await apiPut(`/api/renta_fija/${id}`, data)
+    : await apiPost('/api/renta_fija', data);
+  if(r.ok||r.id){ toast(id?'Inversión actualizada ✅':'Inversión guardada ✅'); closeModal('modal-add'); resetForm(); cargar(); }
+  else toast('Error al guardar',false);
+}
+
+async function eliminar(id){
+  if(!confirm('¿Eliminar esta inversión?')) return;
+  await apiDelete(`/api/renta_fija/${id}`);
+  toast('Eliminado'); cargar();
+}
+
+document.getElementById('modal-add').addEventListener('click', e => {
+  if(e.target.id==='modal-add') resetForm();
+});
+
+resetForm();
+cargar();
+</script>
+{% endblock %}
+
+{% extends "base.html" %}
+{% set current_user = nombre %}
+{% set active = "rendimientos" %}
+{% block title %}Rendimientos — FinTrack CO{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="topbar">
+    <div>
+      <div class="page-title">Rendimientos por período</div>
+      <div class="page-sub">Diario · Mensual · Anual · Acumulado real desde inicio</div>
+    </div>
+    <div class="top-actions">
+      <button class="btn btn-sm" onclick="cargar()"><i class="ti ti-refresh"></i> Actualizar</button>
+    </div>
+  </div>
+
+  <!-- KPIs rendimiento -->
+  <div class="kpi-grid g4" id="kpi-rend-grid">
+    <div class="kpi"><div class="kpi-label">Rend. hoy (diario total)</div><div class="kpi-val up" id="kr-dia">$0</div><div class="kpi-sub">Todas las inversiones activas</div></div>
+    <div class="kpi"><div class="kpi-label">Rend. mensual proyectado</div><div class="kpi-val up" id="kr-mes">$0</div><div class="kpi-sub">A tasa constante</div></div>
+    <div class="kpi"><div class="kpi-label">Rend. anual proyectado</div><div class="kpi-val up" id="kr-año">$0</div><div class="kpi-sub">Interés compuesto</div></div>
+    <div class="kpi"><div class="kpi-label">Rend. acumulado real</div><div class="kpi-val up" id="kr-acum">$0</div><div class="kpi-sub">Desde fecha de inicio</div></div>
+  </div>
+
+  <div class="alert alert-info">
+    ℹ️ <div><b>Cuentas remuneradas (Nu, Lulo, Nequi, Cajitas):</b> el rendimiento se calcula <b>diariamente</b> por capitalización compuesta. Fondo SiRenta y fiducias se calculan según el período declarado. Los valores son estimados — confirma con el extracto de cada entidad.</div>
+  </div>
+
+  <!-- Tabla detallada -->
+  <div class="card">
+    <div class="card-header">
+      <div><div class="card-title">Detalle por inversión</div><div class="card-sub">Ordenado por rendimiento diario</div></div>
+    </div>
+    <div class="table-wrap">
+      <table class="rend-table">
+        <thead>
+          <tr>
+            <th>Inversión</th>
+            <th>Canal</th>
+            <th>Período pago</th>
+            <th class="t-right">Monto</th>
+            <th class="t-right">Tasa E.A.</th>
+            <th class="t-right">Tasa neta</th>
+            <th class="t-right" style="background:#f0fdf4">Rend. diario</th>
+            <th class="t-right">Rend. mensual</th>
+            <th class="t-right">Rend. trimestral</th>
+            <th class="t-right">Rend. anual</th>
+            <th class="t-right">Acumulado real</th>
+            <th class="t-right">Días activo</th>
+            <th>Vence</th>
+          </tr>
+        </thead>
+        <tbody id="tabla-rend">
+          <tr><td colspan="13" class="empty"><div class="empty-icon">📊</div>Cargando…</td></tr>
+        </tbody>
+        <tfoot id="tfoot-rend" style="display:none">
+          <tr style="background:var(--bg);font-weight:700;border-top:1px solid var(--border-s)">
+            <td colspan="3"><b>TOTAL</b></td>
+            <td class="mono t-right" id="tot-monto"></td>
+            <td colspan="2"></td>
+            <td class="mono t-right" id="tot-dia" style="color:var(--green)"></td>
+            <td class="mono t-right" id="tot-mes"></td>
+            <td class="mono t-right" id="tot-tri"></td>
+            <td class="mono t-right" id="tot-año"></td>
+            <td class="mono t-right" id="tot-acum"></td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="card-footer">
+      💡 Los rendimientos diarios de cuentas remuneradas se calculan con fórmula de capitalización compuesta: <b>R_diario = Monto × ((1 + E.A.)^(1/365) − 1)</b>
+    </div>
+  </div>
+
+  <!-- Guía de períodos -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">Guía de períodos de pago en Colombia</div></div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <div style="background:var(--bg);border-radius:var(--r);padding:14px">
+          <div style="margin-bottom:6px"><span class="period-badge period-diario">Diario</span></div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px">Cuentas remuneradas</div>
+          <div style="font-size:12px;color:var(--muted)">Nu Colombia, Lulo Bank, Nequi (cajita), Daviplata, Ualá — el rendimiento se abona cada día.</div>
+        </div>
+        <div style="background:var(--bg);border-radius:var(--r);padding:14px">
+          <div style="margin-bottom:6px"><span class="period-badge period-mensual">Mensual</span></div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px">CDT mensual / Fiducia mensual</div>
+          <div style="font-size:12px;color:var(--muted)">CDT con pago mensual de intereses. Fondo SiRenta (canon mensual). Algunos encargos fiduciarios.</div>
+        </div>
+        <div style="background:var(--bg);border-radius:var(--r);padding:14px">
+          <div style="margin-bottom:6px"><span class="period-badge period-trimestral">Trimestral</span></div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px">CDT trimestral</div>
+          <div style="font-size:12px;color:var(--muted)">Algunos CDT Bancolombia, Davivienda con pago trimestral de intereses.</div>
+        </div>
+        <div style="background:var(--bg);border-radius:var(--r);padding:14px">
+          <div style="margin-bottom:6px"><span class="period-badge period-semestral">Semestral</span></div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px">CDT semestral / TES</div>
+          <div style="font-size:12px;color:var(--muted)">TES pagan cupón semestral. CDT con pago cada 6 meses.</div>
+        </div>
+        <div style="background:var(--bg);border-radius:var(--r);padding:14px">
+          <div style="margin-bottom:6px"><span class="period-badge period-anual">Anual</span></div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px">CDT anual / Bonos</div>
+          <div style="font-size:12px;color:var(--muted)">Bonos corporativos con cupón anual. CDT con pago al año.</div>
+        </div>
+        <div style="background:var(--bg);border-radius:var(--r);padding:14px">
+          <div style="margin-bottom:6px"><span class="period-badge period-vencimiento">Al vencimiento</span></div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px">CDT acumulado</div>
+          <div style="font-size:12px;color:var(--muted)">Sin pago intermedio. Capital + intereses al vencer. Típico en CDTs corto plazo (30–180 días).</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const PERIOD_COLORS = {
+  diario:'period-diario', mensual:'period-mensual', trimestral:'period-trimestral',
+  semestral:'period-semestral', anual:'period-anual', vencimiento:'period-vencimiento'
+};
+
+async function cargar(){
+  const rows = await apiGet('/api/rendimientos');
+  const tbody = document.getElementById('tabla-rend');
+  const tfoot = document.getElementById('tfoot-rend');
+
+  if(!rows.length){
+    tbody.innerHTML = '<tr><td colspan="13"><div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Sin inversiones activas. Registra renta fija o activos inmobiliarios para ver los rendimientos aquí.</div></div></td></tr>';
+    return;
+  }
+
+  // Ordenar por rend. diario DESC
+  rows.sort((a,b) => b.rend_diario - a.rend_diario);
+
+  let totMonto=0, totDia=0, totMes=0, totTri=0, totAño=0, totAcum=0;
+
+  tbody.innerHTML = rows.map(r => {
+    totMonto += r.monto||0;
+    totDia   += r.rend_diario||0;
+    totMes   += r.rend_mensual||0;
+    totTri   += r.rend_trimestral||0;
+    totAño   += r.rend_anual||0;
+    totAcum  += r.rend_acumulado||0;
+
+    const pCls = PERIOD_COLORS[r.periodo] || 'period-anual';
+    const diasV = r.vence ? Math.ceil((new Date(r.vence)-new Date())/(1000*60*60*24)) : null;
+    const venceHtml = r.vence
+      ? `<span class="tag ${diasV<0?'tag-red':diasV<=30?'tag-amber':'tag-green'}">${diasV<0?'Vencido':diasV+'d'}</span>`
+      : '—';
+
+    return `<tr>
+      <td><b>${r.nombre}</b><br><span style="font-size:10px;color:var(--muted)">${r.cat}</span></td>
+      <td style="color:var(--muted)">${r.canal||'—'}</td>
+      <td><span class="period-badge ${pCls}">${r.periodo}</span></td>
+      <td class="mono t-right">${COP(r.monto)}</td>
+      <td class="mono t-right">${Pct(r.tasa_ea)}</td>
+      <td class="mono t-right" style="color:var(--blue)">${Pct(r.tasa_neta)}</td>
+      <td class="t-right"><span class="rend-daily">+${COP(r.rend_diario)}</span></td>
+      <td class="mono t-right up">+${COP(r.rend_mensual)}</td>
+      <td class="mono t-right" style="color:var(--muted)">+${COP(r.rend_trimestral)}</td>
+      <td class="mono t-right" style="color:var(--muted)">+${COP(r.rend_anual)}</td>
+      <td class="mono t-right" style="color:var(--purple)">+${COP(r.rend_acumulado)}</td>
+      <td class="mono t-right" style="color:var(--muted)">${r.dias_activo}</td>
+      <td>${venceHtml}</td>
+    </tr>`;
+  }).join('');
+
+  // Totales
+  document.getElementById('tot-monto').textContent = COP(totMonto);
+  document.getElementById('tot-dia').textContent   = '+'+COP(totDia);
+  document.getElementById('tot-mes').textContent   = '+'+COP(totMes);
+  document.getElementById('tot-tri').textContent   = '+'+COP(totTri);
+  document.getElementById('tot-año').textContent   = '+'+COP(totAño);
+  document.getElementById('tot-acum').textContent  = '+'+COP(totAcum);
+  tfoot.style.display = '';
+
+  // KPIs
+  document.getElementById('kr-dia').textContent  = '+'+COP(totDia);
+  document.getElementById('kr-mes').textContent  = '+'+COP(totMes);
+  document.getElementById('kr-año').textContent  = '+'+COP(totAño);
+  document.getElementById('kr-acum').textContent = '+'+COP(totAcum);
+}
+
+cargar();
+</script>
+{% endblock %}
+
+{% extends "base.html" %}
+{% set current_user = nombre %}
+{% set active = "dashboard" %}
+{% block title %}Dashboard — FinTrack CO{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="topbar">
+    <div>
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub" id="fecha-hoy"></div>
+    </div>
+    <div class="top-actions">
+      <button class="btn-icon" onclick="openAlerts()" id="bell-btn" title="Alertas"><i class="ti ti-bell"></i></button>
+      <button class="btn btn-sm" onclick="location.reload()"><i class="ti ti-refresh"></i></button>
+    </div>
+  </div>
+
+  <!-- Market bar -->
+  <div class="market-bar" id="market-bar">
+    <div class="mkt-tile"><div class="mkt-name">USD / COP</div><div class="mkt-val" id="mk-usd">…</div><div class="mkt-sub" id="mk-usd-s">TRM</div></div>
+    <div class="mkt-tile"><div class="mkt-name">Oro (XAU/USD)</div><div class="mkt-val" id="mk-oro">…</div><div class="mkt-sub">Por onza</div></div>
+    <div class="mkt-tile"><div class="mkt-name">Tasa BR</div><div class="mkt-val" id="mk-br">9.50%</div><div class="mkt-sub">Banco República</div></div>
+    <div class="mkt-tile"><div class="mkt-name">IPC anual</div><div class="mkt-val" id="mk-ipc">5.2%</div><div class="mkt-sub">Inflación CO</div></div>
+  </div>
+
+  <!-- Flujo -->
+  <div class="flujo">
+    <div class="flujo-box" style="border-top:2px solid var(--green)"><div class="flujo-lbl">Ingresos</div><div class="flujo-val up" id="f-ing">$0</div><div class="flujo-pct">total registrado</div></div>
+    <div class="arrow">→</div>
+    <div class="flujo-box" style="border-top:2px solid var(--red)"><div class="flujo-lbl">Gastos</div><div class="flujo-val dn" id="f-gas">$0</div><div class="flujo-pct" id="f-gas-p">—</div></div>
+    <div class="arrow">→</div>
+    <div class="flujo-box" style="border-top:2px solid var(--blue)"><div class="flujo-lbl">Ahorro</div><div class="flujo-val" style="color:var(--blue)" id="f-aho">$0</div><div class="flujo-pct" id="f-aho-p">—</div></div>
+    <div class="arrow">→</div>
+    <div class="flujo-box" style="border-top:2px solid var(--purple)"><div class="flujo-lbl">Portafolio</div><div class="flujo-val" style="color:var(--purple)" id="f-port">$0</div><div class="flujo-pct">acumulado</div></div>
+  </div>
+  <div id="flujo-alert"></div>
+
+  <!-- KPIs patrimonio -->
+  <div class="kpi-grid g4">
+    <div class="kpi"><div class="kpi-label">Patrimonio neto</div><div class="kpi-val" id="kpi-neto">$0</div><div class="kpi-delta" id="kpi-neto-tag">Activos − Pasivos</div></div>
+    <div class="kpi"><div class="kpi-label">Portafolio total</div><div class="kpi-val" id="kpi-port">$0</div><div class="kpi-sub">RF + RV + Inmo + USD</div></div>
+    <div class="kpi"><div class="kpi-label">Rend. hoy (diario)</div><div class="kpi-val up" id="kpi-rend-d">$0</div><div class="kpi-sub">Cuentas + fondos activos</div></div>
+    <div class="kpi"><div class="kpi-label">Rend. mensual</div><div class="kpi-val up" id="kpi-rend-m">$0</div><div class="kpi-sub">Proyectado este mes</div></div>
+  </div>
+  <div class="kpi-grid g4">
+    <div class="kpi"><div class="kpi-label">Rend. anual proyectado</div><div class="kpi-val up" id="kpi-rend-a">$0</div></div>
+    <div class="kpi"><div class="kpi-label">Rend. acumulado real</div><div class="kpi-val up" id="kpi-rend-ac">$0</div><div class="kpi-sub">Desde fecha de inicio</div></div>
+    <div class="kpi"><div class="kpi-label">Total deudas</div><div class="kpi-val dn" id="kpi-deu">$0</div><div class="kpi-sub" id="kpi-deu-r">Ratio: —</div></div>
+    <div class="kpi"><div class="kpi-label">Cuotas / mes</div><div class="kpi-val dn" id="kpi-deu-c">$0</div><div class="kpi-sub">Compromisos fijos</div></div>
+  </div>
+
+  <!-- Alertas -->
+  <div id="alertas-panel"></div>
+</div>
+
+<!-- MODAL ALERTAS -->
+<div class="modal-overlay" id="modal-alertas" onclick="if(event.target===this)closeModal('modal-alertas')">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">🔔 Alertas activas</div>
+      <button class="btn-icon btn-sm" onclick="closeModal('modal-alertas')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body" id="modal-alertas-body"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let TRM = 4200;
+let RESUMEN = null;
+
+document.getElementById('fecha-hoy').textContent = new Date().toLocaleDateString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+async function loadDashboard(){
+  // 1. Cargar mercado
+  try{
+    const m = await apiGet('/api/market');
+    TRM = m.usd_cop || 4200;
+    document.getElementById('mk-usd').textContent = TRM.toLocaleString('es-CO');
+    document.getElementById('mk-usd-s').textContent = 'Actualizado hoy';
+    if(m.gold_usd) document.getElementById('mk-oro').textContent = '$'+Math.round(m.gold_usd).toLocaleString('en-US');
+    if(m.tasa_br)  document.getElementById('mk-br').textContent  = m.tasa_br.toFixed(2)+'%';
+    if(m.ipc)      document.getElementById('mk-ipc').textContent = m.ipc.toFixed(1)+'%';
+  }catch(e){}
+
+  // 2. Resumen
+  try{
+    const r = await apiGet(`/api/resumen?trm=${TRM}`);
+    RESUMEN = r;
+    renderResumen(r);
+  }catch(e){ console.error(e); }
+}
+
+function renderResumen(r){
+  // Flujo
+  document.getElementById('f-ing').textContent  = COP(r.ingresos);
+  document.getElementById('f-gas').textContent  = COP(r.gastos);
+  document.getElementById('f-aho').textContent  = COP(r.ahorro);
+  document.getElementById('f-port').textContent = COP(r.portafolio);
+  if(r.ingresos>0){
+    document.getElementById('f-gas-p').textContent = (r.gastos/r.ingresos*100).toFixed(1)+'% del ingreso';
+    document.getElementById('f-aho-p').textContent = (r.ahorro_mensual/r.ingresos*100).toFixed(1)+'% del ingreso';
+  }
+
+  // Alerta flujo
+  const fa = document.getElementById('flujo-alert');
+  if(r.ingresos>0){
+    const pG = r.gastos/r.ingresos*100;
+    if(pG>80)      fa.innerHTML=`<div class="alert alert-danger">🔴 <div><b>Gastos críticos (${pG.toFixed(1)}%)</b>Reduce gastos variables urgentemente.</div></div>`;
+    else if(pG>60) fa.innerHTML=`<div class="alert alert-warn">⚠️ <div><b>Gastos elevados (${pG.toFixed(1)}%)</b>Sigue la regla 50/30/20.</div></div>`;
+    else           fa.innerHTML=`<div class="alert alert-ok">✅ <div><b>Gastos saludables (${pG.toFixed(1)}%)</b>Tu flujo financiero está equilibrado.</div></div>`;
+  }
+
+  // KPIs
+  const rend = r.rendimientos || {};
+  document.getElementById('kpi-neto').textContent   = COP(r.neto);
+  document.getElementById('kpi-neto-tag').textContent = r.neto>=0 ? 'Activos > Pasivos ✅' : '⚠️ Pasivos > Activos';
+  document.getElementById('kpi-neto-tag').className  = 'kpi-delta '+(r.neto>=0?'up':'dn');
+  document.getElementById('kpi-port').textContent   = COP(r.portafolio);
+  document.getElementById('kpi-rend-d').textContent = COP(rend.total_diario||0);
+  document.getElementById('kpi-rend-m').textContent = COP(rend.total_mensual||0);
+  document.getElementById('kpi-rend-a').textContent = COP(rend.total_anual||0);
+  document.getElementById('kpi-rend-ac').textContent= COP(rend.rf_acumulado||0);
+  document.getElementById('kpi-deu').textContent    = COP(r.deudas);
+  document.getElementById('kpi-deu-c').textContent  = COP(r.deudas_cuota||0);
+  document.getElementById('kpi-deu-r').textContent  = `Ratio: ${r.portafolio>0?(r.deudas/r.portafolio*100).toFixed(1):0}%`;
+
+  // Alertas panel
+  const ap = document.getElementById('alertas-panel');
+  if(r.alertas && r.alertas.length>0){
+    ap.innerHTML = r.alertas.map(a=>`
+      <div class="alert ${a.tipo==='critical'?'alert-danger':a.tipo==='warning'?'alert-warn':'alert-info'}">
+        <span>${a.tipo==='critical'?'🔴':a.tipo==='warning'?'⚠️':'ℹ️'}</span>
+        <div>${a.msg}</div>
+      </div>`).join('');
+    const bell = document.getElementById('bell-btn');
+    const crits = r.alertas.filter(a=>a.tipo==='critical'||a.tipo==='warning').length;
+    if(crits>0) bell.innerHTML = `<i class="ti ti-bell-ringing" style="color:var(--red)"></i>`;
+  }
+}
+
+function openAlerts(){
+  if(!RESUMEN) return;
+  const body = document.getElementById('modal-alertas-body');
+  const alertas = RESUMEN.alertas || [];
+  if(!alertas.length){
+    body.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">Sin alertas activas</div></div>';
+  } else {
+    body.innerHTML = alertas.map(a=>`
+      <div style="background:var(--bg);border-radius:9px;padding:12px 14px;margin-bottom:8px;border-left:3px solid ${a.tipo==='critical'?'var(--red)':a.tipo==='warning'?'var(--amber)':'var(--blue)'}">
+        <div style="font-size:12.5px;font-weight:600;margin-bottom:3px">${a.tipo==='critical'?'🔴 Crítico':a.tipo==='warning'?'⚠️ Aviso':'ℹ️ Info'}</div>
+        <div style="font-size:12px;color:var(--muted)">${a.msg}</div>
+      </div>`).join('');
+  }
+  openModal('modal-alertas');
+}
+
+loadDashboard();
+</script>
+{% endblock %}
+
+{% extends "base.html" %}
+{% block title %}Crear cuenta — FinTrack CO{% endblock %}
+{% block auth_content %}
+<style>
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg)}
+.auth-card{background:var(--surf);border:.5px solid var(--border-s);border-radius:var(--r2);width:100%;max-width:400px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.1)}
+.auth-header{padding:28px 28px 0;text-align:center}
+.auth-logo{width:44px;height:44px;background:#0b0b0b;border-radius:12px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center}
+.auth-logo svg{width:22px;height:22px;fill:#fff}
+.auth-title{font-size:18px;font-weight:700;margin-bottom:4px}
+.auth-sub{font-size:12.5px;color:var(--muted)}
+.auth-body{padding:24px 28px 28px}
+.auth-footer{text-align:center;padding:0 28px 24px;font-size:12.5px;color:var(--muted)}
+.auth-footer a{color:var(--blue);text-decoration:none;font-weight:500}
+</style>
+
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-logo"><svg viewBox="0 0 20 20"><path d="M10 2L2 7v6l8 5 8-5V7L10 2z"/></svg></div>
+      <div class="auth-title">Crear cuenta</div>
+      <div class="auth-sub">FinTrack CO — Fase 1</div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div style="padding:16px 28px 0">
+          {% for cat, msg in messages %}
+            <div class="alert {% if cat=='error' %}alert-danger{% else %}alert-ok{% endif %}">
+              <span>{% if cat=='error' %}⚠️{% else %}✅{% endif %}</span><div>{{ msg }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="auth-body">
+      <form method="POST" action="/registro">
+        <div class="form-grid" style="gap:14px">
+          <div class="form-group">
+            <label>Nombre completo</label>
+            <input type="text" name="nombre" placeholder="Ana García" required autocomplete="name"/>
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="email" placeholder="tu@email.com" required autocomplete="email"/>
+          </div>
+          <div class="form-group">
+            <label>Contraseña (mínimo 6 caracteres)</label>
+            <input type="password" name="password" placeholder="••••••••" required autocomplete="new-password"/>
+          </div>
+          <div class="form-group">
+            <label>Confirmar contraseña</label>
+            <input type="password" name="password2" placeholder="••••••••" required autocomplete="new-password"/>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:18px;padding:10px">
+          Crear cuenta
+        </button>
+      </form>
+    </div>
+    <div class="auth-footer">
+      ¿Ya tienes cuenta? <a href="/login">Iniciar sesión</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% extends "base.html" %}
+{% block title %}Iniciar sesión — FinTrack CO{% endblock %}
+{% block auth_content %}
+<style>
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg)}
+.auth-card{background:var(--surf);border:.5px solid var(--border-s);border-radius:var(--r2);width:100%;max-width:380px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.1)}
+.auth-header{padding:28px 28px 0;text-align:center}
+.auth-logo{width:44px;height:44px;background:#0b0b0b;border-radius:12px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center}
+.auth-logo svg{width:22px;height:22px;fill:#fff}
+.auth-title{font-size:18px;font-weight:700;margin-bottom:4px}
+.auth-sub{font-size:12.5px;color:var(--muted)}
+.auth-body{padding:24px 28px 28px}
+.auth-footer{text-align:center;padding:0 28px 24px;font-size:12.5px;color:var(--muted)}
+.auth-footer a{color:var(--blue);text-decoration:none;font-weight:500}
+</style>
+
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-logo"><svg viewBox="0 0 20 20"><path d="M10 2L2 7v6l8 5 8-5V7L10 2z"/></svg></div>
+      <div class="auth-title">FinTrack CO</div>
+      <div class="auth-sub">Tu gestor financiero personal</div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div style="padding:16px 28px 0">
+          {% for cat, msg in messages %}
+            <div class="alert {% if cat=='error' %}alert-danger{% else %}alert-ok{% endif %}">
+              <span>{% if cat=='error' %}⚠️{% else %}✅{% endif %}</span><div>{{ msg }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="auth-body">
+      <form method="POST" action="/login">
+        <div class="form-grid" style="gap:14px">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="email" placeholder="tu@email.com" required autocomplete="email"/>
+          </div>
+          <div class="form-group">
+            <label>Contraseña</label>
+            <input type="password" name="password" placeholder="••••••••" required autocomplete="current-password"/>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:18px;padding:10px">
+          Iniciar sesión
+        </button>
+      </form>
+    </div>
+    <div class="auth-footer">
+      ¿No tienes cuenta? <a href="/registro">Crear cuenta gratis</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="theme-color" content="#0b0b0b"/>
+<title>{% block title %}FinTrack CO{% endblock %}</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px;-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;background:#f4f4f2;color:#0b0b0b;min-height:100vh}
+:root{
+  --bg:#f4f4f2;--surf:#fff;--border:rgba(0,0,0,.09);--border-s:rgba(0,0,0,.15);
+  --text:#0b0b0b;--muted:#6b6b68;--hint:#a0a09d;
+  --green:#0f7a52;--green-bg:#e8f5ee;
+  --red:#c0392b;--red-bg:#fdecea;
+  --blue:#185fa5;--blue-bg:#e6f1fb;
+  --amber:#854f0b;--amber-bg:#faeeda;
+  --purple:#4a3aa7;--purple-bg:#eeedfe;
+  --r:10px;--r2:14px;
+  --shadow:0 1px 4px rgba(0,0,0,.08);
+  --sidebar-w:220px;
+}
+
+/* ── LAYOUT ── */
+.app{display:flex;min-height:100vh}
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--surf);border-right:.5px solid var(--border-s);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:200;overflow-y:auto;transition:transform .25s}
+.main{margin-left:var(--sidebar-w);flex:1;min-height:100vh}
+.page{padding:20px 24px 32px}
+
+/* ── LOGO ── */
+.logo{padding:16px;border-bottom:.5px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo-mark{width:28px;height:28px;background:#0b0b0b;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-mark svg{width:15px;height:15px;fill:#fff}
+.logo-name{font-size:13.5px;font-weight:600;color:var(--text)}
+.logo-ver{font-size:10px;color:var(--hint);margin-top:1px}
+
+/* ── NAV ── */
+.nav-sec{font-size:9.5px;font-weight:700;color:var(--hint);letter-spacing:1.2px;text-transform:uppercase;padding:12px 14px 4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;font-size:13px;color:var(--muted);border-radius:7px;margin:1px 6px;transition:all .12s;text-decoration:none}
+.nav-item:hover{background:var(--bg);color:var(--text)}
+.nav-item.active{background:#0b0b0b;color:#fff}
+.nav-item i{font-size:15px;width:18px;text-align:center}
+.nav-badge{margin-left:auto;background:#c0392b;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:20px}
+.sidebar-bottom{margin-top:auto;padding:14px;border-top:.5px solid var(--border)}
+.user-pill{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:var(--bg)}
+.user-avatar{width:28px;height:28px;border-radius:50%;background:#0b0b0b;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.user-name{font-size:12px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── TOPBAR ── */
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}
+.page-title{font-size:19px;font-weight:600;letter-spacing:-.4px}
+.page-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.top-actions{display:flex;gap:8px;align-items:center}
+
+/* ── BOTONES ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;border:.5px solid var(--border-s);background:var(--surf);color:var(--text);font-size:12.5px;font-weight:500;cursor:pointer;transition:all .12s;font-family:inherit;text-decoration:none;line-height:1.3}
+.btn:hover{background:var(--bg)}
+.btn-primary{background:#0b0b0b;color:#fff;border-color:#0b0b0b}
+.btn-primary:hover{background:#2c2c2c}
+.btn-danger{background:var(--red-bg);color:var(--red);border-color:transparent}
+.btn-success{background:var(--green-bg);color:var(--green);border-color:transparent}
+.btn-sm{padding:5px 10px;font-size:11.5px}
+.btn-xs{padding:3px 8px;font-size:10.5px}
+.btn-icon{padding:6px;border-radius:7px;border:.5px solid var(--border-s);background:var(--surf);cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);transition:all .12s}
+.btn-icon:hover{background:var(--bg);color:var(--text)}
+.btn-edit{background:var(--blue-bg);color:var(--blue);border-color:transparent}
+.btn-edit:hover{filter:brightness(.95)}
+
+/* ── CARDS ── */
+.card{background:var(--surf);border:.5px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow)}
+.card-header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:.5px solid var(--border)}
+.card-title{font-size:13.5px;font-weight:600}
+.card-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.card-body{padding:18px}
+.card-footer{padding:12px 18px;border-top:.5px solid var(--border);background:var(--bg);font-size:11.5px;color:var(--muted)}
+
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;gap:12px;margin-bottom:18px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.kpi{background:var(--surf);border:.5px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--shadow)}
+.kpi-label{font-size:10px;color:var(--muted);margin-bottom:7px;font-weight:600;text-transform:uppercase;letter-spacing:.6px}
+.kpi-val{font-size:20px;font-weight:600;font-family:ui-monospace,monospace;letter-spacing:-.5px}
+.kpi-val.sm{font-size:16px}
+.kpi-sub{font-size:11px;color:var(--hint);margin-top:4px}
+.kpi-delta{font-size:11.5px;font-weight:600;margin-top:3px}
+.up{color:var(--green)}.dn{color:var(--red)}.nu{color:var(--muted)}
+
+/* ── TABLAS ── */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:600px}
+thead th{text-align:left;padding:9px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--hint);border-bottom:.5px solid var(--border);white-space:nowrap;background:var(--bg)}
+tbody tr{border-bottom:.5px solid rgba(0,0,0,.04);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f9f9f7}
+tbody td{padding:11px 12px;font-size:12.5px;vertical-align:middle}
+.t-right{text-align:right}.t-center{text-align:center}
+.mono{font-family:ui-monospace,monospace}
+
+/* ── TAGS ── */
+.tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px}
+.tag-green{background:var(--green-bg);color:var(--green)}
+.tag-red{background:var(--red-bg);color:var(--red)}
+.tag-blue{background:var(--blue-bg);color:var(--blue)}
+.tag-amber{background:var(--amber-bg);color:var(--amber)}
+.tag-purple{background:var(--purple-bg);color:var(--purple)}
+.tag-gray{background:var(--bg);color:var(--muted);border:.5px solid var(--border-s)}
+
+/* ── FORMS ── */
+.form-grid{display:grid;gap:14px}
+.g2f{grid-template-columns:repeat(2,1fr)}.g3f{grid-template-columns:repeat(3,1fr)}.full{grid-column:1/-1}
+.form-group{display:flex;flex-direction:column;gap:5px}
+label{font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+input,select,textarea{background:var(--bg);border:.5px solid var(--border-s);color:var(--text);font-family:inherit;font-size:13px;padding:9px 12px;border-radius:8px;outline:none;width:100%;transition:border-color .15s;-webkit-appearance:none;appearance:none}
+input:focus,select:focus,textarea:focus{border-color:#0b0b0b;background:#fff}
+.form-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+
+/* ── FLUJO ── */
+.flujo{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;gap:8px;align-items:center;margin-bottom:16px}
+.flujo-box{background:var(--surf);border:.5px solid var(--border);border-radius:var(--r);padding:12px;text-align:center;box-shadow:var(--shadow)}
+.flujo-lbl{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.flujo-val{font-size:16px;font-weight:600;font-family:ui-monospace,monospace}
+.flujo-pct{font-size:10px;color:var(--hint);margin-top:3px}
+.arrow{color:var(--hint);font-size:16px;text-align:center}
+
+/* ── ALERTAS ── */
+.alert{padding:11px 14px;border-radius:9px;font-size:12.5px;margin-bottom:12px;display:flex;gap:9px;align-items:flex-start;line-height:1.5}
+.alert-warn{background:var(--amber-bg);color:var(--amber)}
+.alert-ok{background:var(--green-bg);color:var(--green)}
+.alert-info{background:var(--blue-bg);color:var(--blue)}
+.alert-danger{background:var(--red-bg);color:var(--red)}
+.alert b{display:block;font-weight:600;margin-bottom:1px}
+
+/* ── PROGRESS ── */
+.prog{height:5px;background:rgba(0,0,0,.06);border-radius:3px;overflow:hidden;margin-top:4px}
+.prog-fill{height:100%;border-radius:3px;transition:width .4s}
+
+/* ── MARKET BAR ── */
+.market-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.mkt-tile{background:var(--surf);border:.5px solid var(--border);border-radius:var(--r);padding:11px 14px;box-shadow:var(--shadow)}
+.mkt-name{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.mkt-val{font-size:15px;font-weight:600;font-family:ui-monospace,monospace}
+.mkt-sub{font-size:10px;color:var(--hint);margin-top:3px}
+.mkt-delta{display:inline-block;font-size:10px;font-weight:600;padding:1px 5px;border-radius:4px;margin-top:3px}
+
+/* ── REND TABLE ESPECIAL ── */
+.rend-table{min-width:700px}
+.rend-daily{background:var(--green-bg);color:var(--green);border-radius:6px;padding:2px 7px;font-family:ui-monospace,monospace;font-size:12px;font-weight:600}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;backdrop-filter:blur(2px)}
+.modal-overlay.open{display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:var(--surf);border-radius:var(--r2);width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.2)}
+.modal-header{padding:16px 20px;border-bottom:.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--surf);z-index:1}
+.modal-title{font-size:15px;font-weight:600}
+.modal-body{padding:20px}
+.modal-footer{padding:14px 20px;border-top:.5px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;right:20px;z-index:9999;background:var(--surf);border:.5px solid var(--border-s);color:var(--text);padding:11px 18px;border-radius:11px;font-size:13px;font-weight:500;opacity:0;transform:translateY(8px);transition:all .22s;pointer-events:none;box-shadow:0 4px 24px rgba(0,0,0,.14);border-left:3px solid var(--green);max-width:320px}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ── MOBILE TOGGLE ── */
+.mob-toggle{display:none;position:fixed;top:12px;left:12px;z-index:300;background:var(--surf);border:.5px solid var(--border-s);border-radius:8px;padding:7px;cursor:pointer;box-shadow:var(--shadow)}
+
+/* ── MOBILE ── */
+@media(max-width:768px){
+  :root{--sidebar-w:0px}
+  .sidebar{transform:translateX(-100%);width:240px}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .mob-toggle{display:flex;align-items:center}
+  .page{padding:56px 14px 24px}
+  .g4,.g3{grid-template-columns:repeat(2,1fr)}
+  .g3f{grid-template-columns:1fr 1fr}
+  .market-bar{grid-template-columns:repeat(2,1fr)}
+  .flujo{grid-template-columns:1fr 1fr}.arrow{display:none}
+  table{min-width:500px}
+}
+@media(max-width:480px){
+  .g4,.g3,.g2,.market-bar{grid-template-columns:1fr}
+  .g3f,.g2f{grid-template-columns:1fr}
+  .kpi-val{font-size:18px}
+}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:36px 20px;color:var(--hint)}
+.empty-icon{font-size:28px;margin-bottom:10px}
+.empty-text{font-size:13px}
+
+/* ── RENDIMIENTO PERIOD BADGE ── */
+.period-badge{display:inline-block;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px}
+.period-diario{background:#dcfce7;color:#166534}
+.period-mensual{background:var(--blue-bg);color:var(--blue)}
+.period-trimestral{background:var(--purple-bg);color:var(--purple)}
+.period-semestral{background:var(--amber-bg);color:var(--amber)}
+.period-anual,.period-vencimiento{background:var(--bg);color:var(--muted);border:.5px solid var(--border-s)}
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% if current_user %}
+<button class="mob-toggle" onclick="toggleSidebar()" aria-label="Menú">
+  <i class="ti ti-menu-2" style="font-size:18px"></i>
+</button>
+
+<div class="app">
+<aside class="sidebar" id="sidebar">
+  <div class="logo">
+    <div class="logo-mark"><svg viewBox="0 0 20 20"><path d="M10 2L2 7v6l8 5 8-5V7L10 2z"/></svg></div>
+    <div><div class="logo-name">FinTrack CO</div><div class="logo-ver">v4 Pro · 2026</div></div>
+  </div>
+  <nav style="flex:1;padding:8px 0;overflow-y:auto">
+    <div class="nav-sec">Overview</div>
+    <a class="nav-item {% if active=='dashboard' %}active{% endif %}" href="/dashboard"><i class="ti ti-layout-dashboard"></i> Dashboard</a>
+    <a class="nav-item {% if active=='mercado' %}active{% endif %}" href="/mercado"><i class="ti ti-trending-up"></i> Mercado</a>
+    <div class="nav-sec">Flujo personal</div>
+    <a class="nav-item {% if active=='ingresos' %}active{% endif %}" href="/ingresos"><i class="ti ti-coin"></i> Ingresos</a>
+    <a class="nav-item {% if active=='gastos' %}active{% endif %}" href="/gastos"><i class="ti ti-receipt"></i> Gastos</a>
+    <a class="nav-item {% if active=='ahorro' %}active{% endif %}" href="/ahorro"><i class="ti ti-piggy-bank"></i> Ahorro</a>
+    <div class="nav-sec">Portafolio</div>
+    <a class="nav-item {% if active=='seguimiento' %}active{% endif %}" href="/seguimiento"><i class="ti ti-chart-line"></i> Seguimiento</a>
+    <a class="nav-item {% if active=='renta_fija' %}active{% endif %}" href="/renta_fija"><i class="ti ti-building-bank"></i> Renta fija</a>
+    <a class="nav-item {% if active=='renta_variable' %}active{% endif %}" href="/renta_variable"><i class="ti ti-chart-candle"></i> Renta variable</a>
+    <a class="nav-item {% if active=='inmobiliario' %}active{% endif %}" href="/inmobiliario"><i class="ti ti-building"></i> Inmobiliario</a>
+    <a class="nav-item {% if active=='dolares' %}active{% endif %}" href="/dolares"><i class="ti ti-currency-dollar"></i> Dólares</a>
+    <a class="nav-item {% if active=='rendimientos' %}active{% endif %}" href="/rendimientos"><i class="ti ti-calendar-stats"></i> Rendimientos</a>
+    <div class="nav-sec">Pasivos</div>
+    <a class="nav-item {% if active=='deudas' %}active{% endif %}" href="/deudas"><i class="ti ti-credit-card"></i> Deudas</a>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="user-pill">
+      <div class="user-avatar">{{ current_user[0]|upper }}</div>
+      <div class="user-name">{{ current_user }}</div>
+      <a href="/logout" class="btn-icon" title="Salir"><i class="ti ti-logout"></i></a>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div style="padding:12px 24px 0">
+        {% for cat, msg in messages %}
+          <div class="alert {% if cat=='error' %}alert-danger{% else %}alert-ok{% endif %}">
+            <span>{% if cat=='error' %}⚠️{% else %}✅{% endif %}</span>
+            <div>{{ msg }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+}
+document.addEventListener('click',function(e){
+  const sb=document.getElementById('sidebar');
+  if(sb.classList.contains('open')&&!sb.contains(e.target)&&!e.target.closest('.mob-toggle')){
+    sb.classList.remove('open');
+  }
+});
+
+const COP = n => '$' + Math.round(n).toLocaleString('es-CO');
+const Pct = n => (+n).toFixed(2) + '%';
+const hoy = () => new Date().toISOString().split('T')[0];
+
+function toast(msg, ok=true){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderLeftColor = ok ? 'var(--green)' : 'var(--red)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// API helpers
+async function api(url, method='GET', body=null){
+  const opts = {method, headers:{'Content-Type':'application/json'}};
+  if(body) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  return r.json();
+}
+const apiGet    = url        => api(url);
+const apiPost   = (url, d)  => api(url, 'POST', d);
+const apiPut    = (url, d)  => api(url, 'PUT',  d);
+const apiDelete = url        => api(url, 'DELETE');
+
+// Modal helpers
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+</script>
+
+{% else %}
+{% block auth_content %}{% endblock %}
+{% endif %}
+
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>
