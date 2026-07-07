@@ -1052,43 +1052,74 @@ def health():
 #  MAIN
 # ══════════════════════════════════════════════════════════════
 
+
+# ── Rutas de páginas (solo las que NO tienen ruta ya definida) ──
+@app.route("/mercado")
+@login_required
+def mercado():
+    return render_template("generic.html", nombre=session["user_name"], titulo="Mercado", active="mercado")
+
+@app.route("/ingresos")
+@login_required
+def ingresos():
+    return render_template("generic.html", nombre=session["user_name"], titulo="Ingresos", active="ingresos")
+
+@app.route("/gastos")
+@login_required
+def gastos():
+    return render_template("generic.html", nombre=session["user_name"], titulo="Gastos", active="gastos")
+
+@app.route("/ahorro")
+@login_required
+def ahorro():
+    return render_template("generic.html", nombre=session["user_name"], titulo="Ahorro", active="ahorro")
+
+@app.route("/seguimiento")
+@login_required
+def seguimiento():
+    return render_template("generic.html", nombre=session["user_name"], titulo="Seguimiento", active="seguimiento")
+
+@app.route("/renta_fija")
+@login_required
+def renta_fija():
+    tpl = "renta_fija.html"
+    import os
+    if os.path.exists(os.path.join(app.template_folder, tpl)):
+        return render_template(tpl, nombre=session["user_name"])
+    return render_template("generic.html", nombre=session["user_name"], titulo="Renta Fija", active="renta_fija")
+
+@app.route("/renta_variable")
+@login_required
+def renta_variable():
+    return render_template("generic.html", nombre=session["user_name"], titulo="Renta Variable", active="renta_variable")
+
+@app.route("/inmobiliario")
+@login_required
+def inmobiliario():
+    return render_template("generic.html", nombre=session["user_name"], titulo="Inmobiliario", active="inmobiliario")
+
+@app.route("/dolares")
+@login_required
+def dolares():
+    return render_template("generic.html", nombre=session["user_name"], titulo="Dólares", active="dolares")
+
+@app.route("/rendimientos")
+@login_required
+def rendimientos_page():
+    tpl = "rendimientos.html"
+    import os
+    if os.path.exists(os.path.join(app.template_folder, tpl)):
+        return render_template(tpl, nombre=session["user_name"])
+    return render_template("generic.html", nombre=session["user_name"], titulo="Rendimientos", active="rendimientos")
+
+@app.route("/deudas")
+@login_required
+def deudas():
+    return render_template("generic.html", nombre=session["user_name"], titulo="Deudas", active="deudas")
+
 if __name__ == "__main__":
     init_db()
     port  = int(os.environ.get("PORT",5000))
     debug = os.environ.get("FLASK_DEBUG","true").lower()=="true"
     print(f"\n  FinTrack CO v4 — http://localhost:{port}\n")
     app.run(host="0.0.0.0", port=port, debug=debug)
-
-# ── Rutas de páginas adicionales ──────────────────────────────
-
-PAGINAS = [
-    ("mercado",       "Mercado"),
-    ("ingresos",      "Ingresos"),
-    ("gastos",        "Gastos"),
-    ("ahorro",        "Ahorro"),
-    ("seguimiento",   "Seguimiento"),
-    ("renta_fija",    "Renta Fija"),
-    ("renta_variable","Renta Variable"),
-    ("inmobiliario",  "Inmobiliario"),
-    ("dolares",       "Dólares"),
-    ("rendimientos",  "Rendimientos"),
-    ("deudas",        "Deudas"),
-]
-
-for _ruta, _titulo in PAGINAS:
-    def _make_view(ruta, titulo):
-        @app.route(f"/{ruta}", endpoint=ruta)
-        @login_required
-        def _view():
-            tpl = f"{ruta}.html"
-            import os as _os
-            tpl_path = _os.path.join(app.template_folder, tpl)
-            if _os.path.exists(tpl_path):
-                return render_template(tpl, nombre=session["user_name"])
-            # Template genérico si no existe archivo específico
-            return render_template("generic.html",
-                nombre=session["user_name"],
-                titulo=titulo,
-                active=ruta)
-        return _view
-    _make_view(_ruta, _titulo)
