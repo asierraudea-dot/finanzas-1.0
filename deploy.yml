@@ -1,0 +1,51 @@
+name: Deploy FinTrack CO to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Validate HTML
+        run: |
+          echo "Validando index.html..."
+          if [ ! -f "index.html" ]; then
+            echo "ERROR: index.html no encontrado"
+            exit 1
+          fi
+          FILE_SIZE=$(wc -c < index.html)
+          echo "Tamaño del archivo: $FILE_SIZE bytes"
+          if [ "$FILE_SIZE" -lt 10000 ]; then
+            echo "ADVERTENCIA: El archivo parece muy pequeño"
+          fi
+          echo "Validación completada exitosamente"
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
