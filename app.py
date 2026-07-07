@@ -164,3 +164,48 @@ else:  # Recomendaciones IA
 # Footer
 st.sidebar.caption("Finanzas Fáciles v2.0 © 2026")
 st.caption("Herramienta educativa para finanzas personales en Colombia y LATAM. Datos locales en esta sesión.")
+
+elif page == "📊 Simulador de Portafolio":
+    st.title("📊 Simulador de Portafolio y Proyecciones")
+    
+    st.subheader("Configuración Mensual")
+    ingreso = st.number_input("Ingreso mensual", value=5000000)
+    gastos = st.number_input("Gastos mensuales", value=1500000)
+    reserva_imprevistos = st.slider("Reserva imprevistos (%)", 10, 30, 20)
+    
+    ahorro_bruto = ingreso - gastos
+    reserva = int(ahorro_bruto * (reserva_imprevistos / 100))
+    ahorro_neto = ahorro_bruto - reserva
+    
+    st.metric("Ahorro Neto Mensual para Invertir", f"${ahorro_neto:,.0f}")
+    
+    # Distribución
+    st.subheader("Distribución de Inversión")
+    rf = st.slider("Renta Fija (%)", 0, 100, 50)
+    rv_col = st.slider("Renta Variable Colombia (%)", 0, 100, 30)
+    intl = st.slider("Internacional/Dólar (%)", 0, 100, 15)
+    alto = 100 - rf - rv_col - intl
+    
+    meses = st.slider("Meses a proyectar", 6, 60, 12)
+    
+    # Simulación
+    capital = 0
+    data = []
+    for mes in range(1, meses+1):
+        capital += ahorro_neto
+        rendimiento = (capital * 0.12 / 12)  # 12% EA promedio
+        capital += rendimiento
+        data.append({
+            'Mes': mes,
+            'Aporte': ahorro_neto,
+            'Rendimiento': round(rendimiento),
+            'Capital Final': round(capital)
+        })
+    
+    df_sim = pd.DataFrame(data)
+    st.dataframe(df_sim, use_container_width=True)
+    
+    fig = px.line(df_sim, x='Mes', y='Capital Final', title="Crecimiento Proyectado del Capital")
+    st.plotly_chart(fig, use_container_width=True)
+    
+    st.success(f"**Capital proyectado en {meses} meses: ${capital:,.0f} COP**")
