@@ -1,0 +1,1078 @@
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f7f5;--surf:#ffffff;--card:#ffffff;--border:rgba(0,0,0,.09);
+  --border-s:rgba(0,0,0,.15);--text:#0b0b0b;--muted:#6b6b68;--hint:#a0a09d;
+  --green:#0f7a52;--green-bg:#e8f5ee;--red:#c0392b;--red-bg:#fdecea;
+  --blue:#185fa5;--blue-bg:#e6f1fb;--amber:#854f0b;--amber-bg:#faeeda;
+  --purple:#4a3aa7;--purple-bg:#eeedfe;
+  --r:10px;--r2:14px;
+}
+body{font-family:var(--font-sans,'system-ui',sans-serif);background:var(--bg);color:var(--text);font-size:13px;line-height:1.5}
+
+/* ── LAYOUT ── */
+.app{display:grid;grid-template-columns:200px 1fr;min-height:600px;max-height:90vh;overflow:hidden;background:var(--bg);border-radius:var(--r2);border:0.5px solid var(--border-s)}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--surf);border-right:0.5px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.logo{padding:16px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:8px}
+.logo-mark{width:28px;height:28px;background:#0b0b0b;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-mark svg{width:16px;height:16px;fill:white}
+.logo-text{font-size:13px;font-weight:500;color:var(--text)}
+.logo-ver{font-size:10px;color:var(--muted)}
+
+.nav-section{font-size:10px;font-weight:500;color:var(--hint);letter-spacing:.8px;text-transform:uppercase;padding:14px 14px 4px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;font-size:12.5px;color:var(--muted);border-radius:6px;margin:1px 6px;transition:all .12s}
+.nav-item:hover{background:var(--bg);color:var(--text)}
+.nav-item.active{background:#0b0b0b;color:#fff}
+.nav-item i{font-size:14px;width:16px;text-align:center}
+.nav-badge{margin-left:auto;background:#e34948;color:#fff;font-size:9px;font-weight:500;padding:1px 5px;border-radius:20px;line-height:1.4}
+
+.sidebar-footer{margin-top:auto;padding:12px 14px;border-top:0.5px solid var(--border)}
+.trm-row{display:flex;align-items:center;gap:6px}
+.trm-label{font-size:10px;color:var(--hint)}
+.trm-input{font-size:12px;font-family:var(--font-mono,'monospace');width:80px;padding:4px 8px;border:0.5px solid var(--border-s);border-radius:6px;background:var(--bg);color:var(--text)}
+
+/* ── MAIN ── */
+.main{overflow-y:auto;display:flex;flex-direction:column}
+.topbar{padding:16px 20px 0;display:flex;justify-content:space-between;align-items:flex-start;flex-shrink:0}
+.page-title{font-size:18px;font-weight:500;color:var(--text)}
+.page-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+.top-actions{display:flex;gap:6px;align-items:center}
+
+/* ── SECTIONS ── */
+.section{display:none;padding:16px 20px 20px;flex:1}
+.section.active{display:block}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:7px;border:0.5px solid var(--border-s);background:var(--surf);color:var(--text);font-size:12px;font-weight:500;cursor:pointer;transition:all .12s;font-family:inherit}
+.btn:hover{background:var(--bg)}
+.btn-primary{background:#0b0b0b;color:#fff;border-color:#0b0b0b}
+.btn-primary:hover{background:#333}
+.btn-danger{background:var(--red-bg);color:var(--red);border-color:transparent}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn-icon{padding:6px;border-radius:7px;border:0.5px solid var(--border-s);background:var(--surf);cursor:pointer;font-size:14px;display:inline-flex;color:var(--muted);transition:all .12s}
+.btn-icon:hover{background:var(--bg);color:var(--text)}
+
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;gap:10px;margin-bottom:16px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+.kpi{background:var(--surf);border:0.5px solid var(--border);border-radius:var(--r);padding:14px}
+.kpi-label{font-size:10.5px;color:var(--muted);margin-bottom:6px;font-weight:500}
+.kpi-val{font-size:20px;font-weight:500;color:var(--text);font-family:var(--font-mono,'monospace')}
+.kpi-val.sm{font-size:16px}
+.kpi-sub{font-size:10.5px;color:var(--hint);margin-top:4px}
+.kpi-delta{font-size:11px;font-weight:500;margin-top:3px}
+.up{color:var(--green)}.dn{color:var(--red)}.nu{color:var(--muted)}
+
+/* ── CARDS ── */
+.card{background:var(--surf);border:0.5px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:14px}
+.card-header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:0.5px solid var(--border)}
+.card-title{font-size:13px;font-weight:500}
+.card-sub{font-size:11px;color:var(--muted);margin-top:1px}
+.card-body{padding:16px}
+
+/* ── MARKET BAR ── */
+.market-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.mkt-tile{background:var(--surf);border:0.5px solid var(--border);border-radius:var(--r);padding:11px 14px;display:flex;justify-content:space-between;align-items:center}
+.mkt-left{display:flex;flex-direction:column;gap:2px}
+.mkt-name{font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.mkt-val{font-size:15px;font-weight:500;font-family:var(--font-mono,'monospace');color:var(--text)}
+.mkt-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.mkt-delta{font-size:11px;font-weight:500;padding:2px 6px;border-radius:4px}
+.mkt-delta.up{background:var(--green-bg);color:var(--green)}
+.mkt-delta.dn{background:var(--red-bg);color:var(--red)}
+.mkt-date{font-size:9.5px;color:var(--hint)}
+.mkt-loading{font-size:10px;color:var(--hint);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+/* ── TABLES ── */
+table{width:100%;border-collapse:collapse}
+thead th{text-align:left;padding:8px 12px;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.7px;color:var(--hint);border-bottom:0.5px solid var(--border)}
+tbody tr{border-bottom:0.5px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--bg)}
+tbody td{padding:10px 12px;font-size:12.5px}
+.t-right{text-align:right}.t-center{text-align:center}
+.mono{font-family:var(--font-mono,'monospace')}
+
+/* ── TAGS ── */
+.tag{display:inline-block;font-size:10px;font-weight:500;padding:2px 7px;border-radius:20px}
+.tag-green{background:var(--green-bg);color:var(--green)}
+.tag-red{background:var(--red-bg);color:var(--red)}
+.tag-blue{background:var(--blue-bg);color:var(--blue)}
+.tag-amber{background:var(--amber-bg);color:var(--amber)}
+.tag-purple{background:var(--purple-bg);color:var(--purple)}
+.tag-gray{background:var(--bg);color:var(--muted);border:0.5px solid var(--border)}
+
+/* ── FORMS ── */
+.form-grid{display:grid;gap:12px}
+.g2f{grid-template-columns:repeat(2,1fr)}
+.g3f{grid-template-columns:repeat(3,1fr)}
+.g4f{grid-template-columns:repeat(4,1fr)}
+.full{grid-column:1/-1}
+.form-group{display:flex;flex-direction:column;gap:4px}
+label{font-size:10px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+input,select,textarea{background:var(--bg);border:0.5px solid var(--border-s);color:var(--text);font-family:inherit;font-size:12.5px;padding:8px 11px;border-radius:7px;outline:none;width:100%;transition:border-color .12s}
+input:focus,select:focus{border-color:#0b0b0b}
+select option{background:var(--surf)}
+.form-actions{display:flex;gap:8px;margin-top:14px}
+
+/* ── PROGRESS ── */
+.prog{height:5px;background:var(--bg);border-radius:3px;overflow:hidden;margin-top:4px}
+.prog-fill{height:100%;border-radius:3px;transition:width .3s}
+
+/* ── TABS ── */
+.tabs{display:flex;border-bottom:0.5px solid var(--border);margin-bottom:16px;gap:0}
+.tab{padding:8px 16px;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-0.5px;transition:all .12s}
+.tab.active{color:var(--text);border-bottom-color:#0b0b0b}
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* ── ALERT INLINE ── */
+.alert{padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start;line-height:1.5}
+.alert-warn{background:var(--amber-bg);color:var(--amber)}
+.alert-ok{background:var(--green-bg);color:var(--green)}
+.alert-info{background:var(--blue-bg);color:var(--blue)}
+.alert-danger{background:var(--red-bg);color:var(--red)}
+.alert b{display:block;font-weight:500}
+
+/* ── MOVIMIENTO HISTORY ── */
+.mov-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border)}
+.mov-item:last-child{border-bottom:none}
+.mov-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.mov-body{flex:1}
+.mov-title{font-size:12.5px;font-weight:500}
+.mov-sub{font-size:11px;color:var(--muted)}
+.mov-amount{font-family:var(--font-mono,'monospace');font-size:13px;font-weight:500;text-align:right}
+.mov-date{font-size:10px;color:var(--hint);text-align:right}
+
+/* ── CHART CONTAINER ── */
+.chart-wrap{position:relative;width:100%}
+
+/* ── DONUT ── */
+.donut-wrap{position:relative;width:120px;height:120px;flex-shrink:0}
+.donut-wrap svg{width:100%;height:100%;transform:rotate(-90deg)}
+.donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.donut-val{font-size:14px;font-weight:500}
+.donut-lbl{font-size:9px;color:var(--muted)}
+
+/* ── FLUJO ── */
+.flujo{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;gap:8px;align-items:center;margin-bottom:16px}
+.flujo-box{background:var(--surf);border:0.5px solid var(--border);border-radius:var(--r);padding:12px;text-align:center}
+.flujo-lbl{font-size:9.5px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.flujo-val{font-size:16px;font-weight:500;font-family:var(--font-mono,'monospace')}
+.flujo-pct{font-size:10px;color:var(--hint);margin-top:3px}
+.arrow{color:var(--hint);font-size:16px;text-align:center}
+
+/* ── SEGUIMIENTO ── */
+.seg-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.seg-title{font-size:13px;font-weight:500}
+.inv-card{background:var(--surf);border:0.5px solid var(--border);border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+.inv-card-top{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;transition:background .1s}
+.inv-card-top:hover{background:var(--bg)}
+.inv-card-left{display:flex;align-items:center;gap:10px}
+.inv-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.inv-name{font-size:13px;font-weight:500}
+.inv-meta{font-size:11px;color:var(--muted)}
+.inv-right{text-align:right}
+.inv-valor{font-size:14px;font-weight:500;font-family:var(--font-mono,'monospace')}
+.inv-retorno{font-size:11px;font-weight:500}
+.inv-body{display:none;border-top:0.5px solid var(--border);padding:14px}
+.inv-body.open{display:block}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:16px;right:16px;z-index:999;background:var(--surf);border:0.5px solid var(--border-s);color:var(--text);padding:10px 16px;border-radius:10px;font-size:12.5px;font-weight:500;opacity:0;transform:translateY(6px);transition:all .2s;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.12)}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* ── ALERTS PANEL ── */
+.alerts-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200}
+.alerts-overlay.open{display:flex;align-items:flex-start;justify-content:flex-end;padding:16px}
+.alerts-panel{background:var(--surf);border:0.5px solid var(--border-s);border-radius:var(--r2);width:320px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.15)}
+.ap-header{padding:14px 16px;border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:500;position:sticky;top:0;background:var(--surf)}
+.ap-body{padding:12px}
+
+/* EMPTY */
+.empty{text-align:center;padding:32px;color:var(--hint);font-size:12.5px}
+.empty-icon{font-size:24px;margin-bottom:8px}
+
+/* RESPONSIVE */
+@media(max-width:640px){
+  .app{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .market-bar,.g4,.g3{grid-template-columns:repeat(2,1fr)}
+  .flujo{grid-template-columns:1fr 1fr}
+  .arrow{display:none}
+}
+</style>
+
+<div class="alerts-overlay" id="alertsOverlay" onclick="closeAlerts(event)">
+  <div class="alerts-panel">
+    <div class="ap-header"><span>Alertas activas</span><button class="btn-icon btn-sm" onclick="closeAlerts()">✕</button></div>
+    <div class="ap-body" id="alertsBody"></div>
+  </div>
+</div>
+
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-mark"><svg viewBox="0 0 20 20"><path d="M10 2L2 7v6l8 5 8-5V7L10 2z"/></svg></div>
+    <div><div class="logo-text">FinTrack CO</div><div class="logo-ver">v3 · Pro</div></div>
+  </div>
+  <div class="nav-section">Overview</div>
+  <div class="nav-item active" onclick="nav('dashboard',this)"><i class="ti ti-layout-dashboard" aria-hidden="true"></i> Dashboard</div>
+  <div class="nav-item" onclick="nav('mercado',this)"><i class="ti ti-trending-up" aria-hidden="true"></i> Mercado</div>
+  <div class="nav-section">Flujo personal</div>
+  <div class="nav-item" onclick="nav('ingresos',this)"><i class="ti ti-coin" aria-hidden="true"></i> Ingresos</div>
+  <div class="nav-item" onclick="nav('gastos',this)"><i class="ti ti-receipt" aria-hidden="true"></i> Gastos</div>
+  <div class="nav-item" onclick="nav('ahorro',this)"><i class="ti ti-piggy-bank" aria-hidden="true"></i> Ahorro</div>
+  <div class="nav-section">Portafolio</div>
+  <div class="nav-item" onclick="nav('seguimiento',this)"><i class="ti ti-chart-line" aria-hidden="true"></i> Seguimiento <span class="nav-badge" id="seg-badge">0</span></div>
+  <div class="nav-item" onclick="nav('renta-fija',this)"><i class="ti ti-building-bank" aria-hidden="true"></i> Renta fija</div>
+  <div class="nav-item" onclick="nav('renta-variable',this)"><i class="ti ti-chart-candle" aria-hidden="true"></i> Renta variable</div>
+  <div class="nav-item" onclick="nav('inmobiliario',this)"><i class="ti ti-building" aria-hidden="true"></i> Inmobiliario</div>
+  <div class="nav-item" onclick="nav('dolares',this)"><i class="ti ti-currency-dollar" aria-hidden="true"></i> Dólares</div>
+  <div class="nav-section">Pasivos & Tools</div>
+  <div class="nav-item" onclick="nav('deudas',this)"><i class="ti ti-credit-card" aria-hidden="true"></i> Deudas</div>
+  <div class="nav-item" onclick="nav('simulador',this)"><i class="ti ti-calculator" aria-hidden="true"></i> Simulador</div>
+  <div class="sidebar-footer">
+    <div style="font-size:10px;color:var(--hint);margin-bottom:6px">TRM (COP/USD)</div>
+    <div class="trm-row">
+      <input class="trm-input" type="number" id="trm-global" value="4200" onchange="S.trm=+this.value;save();renderDash()"/>
+      <button class="btn btn-sm" onclick="fetchTRM()">↻</button>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+<!-- ══ DASHBOARD ══ -->
+<div id="sec-dashboard" class="section active">
+  <div class="topbar">
+    <div><div class="page-title">Dashboard</div><div class="page-sub" id="dash-fecha"></div></div>
+    <div class="top-actions">
+      <button class="btn-icon" onclick="openAlerts()" id="bell-btn" title="Alertas"><i class="ti ti-bell" aria-hidden="true"></i></button>
+      <button class="btn btn-sm" onclick="exportData()"><i class="ti ti-download" aria-hidden="true"></i> Exportar</button>
+    </div>
+  </div>
+
+  <!-- Market bar -->
+  <div style="padding:12px 20px 0">
+    <div class="market-bar" id="market-bar">
+      <div class="mkt-tile"><div class="mkt-left"><div class="mkt-name">USD / COP</div><div class="mkt-val" id="mk-usd">—</div></div><div class="mkt-right"><div class="mkt-delta" id="mk-usd-d">—</div><div class="mkt-date" id="mk-usd-t"></div></div></div>
+      <div class="mkt-tile"><div class="mkt-left"><div class="mkt-name">Oro (oz)</div><div class="mkt-val" id="mk-oro">—</div></div><div class="mkt-right"><div class="mkt-delta" id="mk-oro-d">—</div><div class="mkt-date">XAU/USD</div></div></div>
+      <div class="mkt-tile"><div class="mkt-left"><div class="mkt-name">DTF E.A.</div><div class="mkt-val" id="mk-dtf">11.28%</div></div><div class="mkt-right"><div class="mkt-delta up">Ref.</div><div class="mkt-date">Banco Rep.</div></div></div>
+      <div class="mkt-tile"><div class="mkt-left"><div class="mkt-name">IPC anual</div><div class="mkt-val" id="mk-ipc">5.2%</div></div><div class="mkt-right"><div class="mkt-delta" id="mk-ipc-d">—</div><div class="mkt-date">Inflación CO</div></div></div>
+    </div>
+  </div>
+
+  <div style="padding:0 20px">
+    <!-- Flujo -->
+    <div class="flujo" id="flujo-row">
+      <div class="flujo-box" style="border-top:2px solid var(--green)"><div class="flujo-lbl">Ingresos</div><div class="flujo-val up" id="f-ing">$0</div><div class="flujo-pct" id="f-ing-s">mes actual</div></div>
+      <div class="arrow">→</div>
+      <div class="flujo-box" style="border-top:2px solid var(--red)"><div class="flujo-lbl">Gastos</div><div class="flujo-val dn" id="f-gas">$0</div><div class="flujo-pct" id="f-gas-p">0% ingreso</div></div>
+      <div class="arrow">→</div>
+      <div class="flujo-box" style="border-top:2px solid var(--blue)"><div class="flujo-lbl">Ahorro</div><div class="flujo-val" style="color:var(--blue)" id="f-aho">$0</div><div class="flujo-pct" id="f-aho-p">0% ingreso</div></div>
+      <div class="arrow">→</div>
+      <div class="flujo-box" style="border-top:2px solid var(--purple)"><div class="flujo-lbl">Portafolio</div><div class="flujo-val" style="color:var(--purple)" id="f-inv">$0</div><div class="flujo-pct" id="f-inv-p">0% ingreso</div></div>
+    </div>
+    <div id="flujo-alert"></div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid g4" style="margin-bottom:14px">
+      <div class="kpi"><div class="kpi-label">Patrimonio neto</div><div class="kpi-val" id="kpi-neto">$0</div><div class="kpi-delta" id="kpi-neto-tag">Activos — Pasivos</div></div>
+      <div class="kpi"><div class="kpi-label">Total portafolio</div><div class="kpi-val" id="kpi-port">$0</div><div class="kpi-sub">Todas las categorías</div></div>
+      <div class="kpi"><div class="kpi-label">Rendimientos/año</div><div class="kpi-val" id="kpi-rend">$0</div><div class="kpi-sub">Proyectado</div></div>
+      <div class="kpi"><div class="kpi-label">Total deudas</div><div class="kpi-val" id="kpi-deu">$0</div><div class="kpi-sub" id="kpi-deu-r">Ratio: —</div></div>
+    </div>
+
+    <!-- Charts row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div class="card" style="margin:0">
+        <div class="card-header"><div class="card-title">Composición del portafolio</div></div>
+        <div class="card-body" style="display:flex;gap:16px;align-items:center">
+          <div class="donut-wrap">
+            <svg viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#f0efec" stroke-width="11"/>
+              <circle id="dr-rf"   cx="50" cy="50" r="40" fill="none" stroke="#2a78d6" stroke-width="11" stroke-dasharray="0 251"/>
+              <circle id="dr-rv"   cx="50" cy="50" r="40" fill="none" stroke="#1baf7a" stroke-width="11" stroke-dasharray="0 251"/>
+              <circle id="dr-inmo" cx="50" cy="50" r="40" fill="none" stroke="#eda100" stroke-width="11" stroke-dasharray="0 251"/>
+              <circle id="dr-usd"  cx="50" cy="50" r="40" fill="none" stroke="#4a3aa7" stroke-width="11" stroke-dasharray="0 251"/>
+            </svg>
+            <div class="donut-center"><div class="donut-val" id="dr-n">0</div><div class="donut-lbl">categ.</div></div>
+          </div>
+          <div style="flex:1;font-size:11.5px">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px"><span style="width:8px;height:8px;border-radius:2px;background:#2a78d6;flex-shrink:0"></span><span style="flex:1;color:var(--muted)">Renta fija</span><span class="mono" id="dl-rf">0%</span></div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px"><span style="width:8px;height:8px;border-radius:2px;background:#1baf7a;flex-shrink:0"></span><span style="flex:1;color:var(--muted)">Renta variable</span><span class="mono" id="dl-rv">0%</span></div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px"><span style="width:8px;height:8px;border-radius:2px;background:#eda100;flex-shrink:0"></span><span style="flex:1;color:var(--muted)">Inmobiliario</span><span class="mono" id="dl-inmo">0%</span></div>
+            <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:2px;background:#4a3aa7;flex-shrink:0"></span><span style="flex:1;color:var(--muted)">USD</span><span class="mono" id="dl-usd">0%</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin:0">
+        <div class="card-header"><div class="card-title">Gastos por categoría</div></div>
+        <div class="card-body" id="dash-gastos-cat"><div class="empty"><div class="empty-icon">🧾</div>Sin gastos</div></div>
+      </div>
+    </div>
+
+    <!-- Recent -->
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">Últimas operaciones</div><div class="card-sub">Todas las categorías</div></div></div>
+      <div id="dash-recent"><div class="empty"><div class="empty-icon">📭</div>Sin operaciones aún</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MERCADO ══ -->
+<div id="sec-mercado" class="section">
+  <div class="topbar"><div><div class="page-title">Mercado</div><div class="page-sub">Indicadores en tiempo real + análisis IA</div></div><div class="top-actions"><button class="btn btn-sm" onclick="loadMercadoIA()"><i class="ti ti-robot" aria-hidden="true"></i> Análisis IA</button></div></div>
+  <div style="margin-top:16px">
+    <div class="kpi-grid g4" style="margin-bottom:16px">
+      <div class="kpi"><div class="kpi-label">USD / COP (TRM)</div><div class="kpi-val sm" id="m-usd-val">Cargando…</div><div class="kpi-sub" id="m-usd-s"></div></div>
+      <div class="kpi"><div class="kpi-label">Oro (XAU/USD)</div><div class="kpi-val sm" id="m-oro-val">Cargando…</div><div class="kpi-sub">Por onza troy</div></div>
+      <div class="kpi"><div class="kpi-label">Tasa intervención BR</div><div class="kpi-val sm">9.5% E.A.</div><div class="kpi-sub">Banco de la República</div></div>
+      <div class="kpi"><div class="kpi-label">DTF</div><div class="kpi-val sm">11.28% E.A.</div><div class="kpi-sub">Referencia CDT</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">Top acciones COLCAP — KPIs</div><div class="card-sub">ROA, ROE, P/E referencial</div></div>
+      <div class="card-body">
+        <table>
+          <thead><tr><th>Empresa</th><th>Ticker</th><th>Sector</th><th class="t-right">ROA</th><th class="t-right">ROE</th><th class="t-right">P/E ref.</th><th class="t-right">Yield div.</th><th>Perfil</th></tr></thead>
+          <tbody>
+            <tr><td><b>Bancolombia</b></td><td class="mono tag tag-gray">PFBCOL</td><td style="color:var(--muted)">Financiero</td><td class="mono t-right up">1.8%</td><td class="mono t-right up">14.2%</td><td class="mono t-right">7.1x</td><td class="mono t-right up">4.5%</td><td><span class="tag tag-green">Sólido</span></td></tr>
+            <tr><td><b>Ecopetrol</b></td><td class="mono tag tag-gray">ECOPETROL</td><td style="color:var(--muted)">Energía</td><td class="mono t-right up">5.2%</td><td class="mono t-right up">18.1%</td><td class="mono t-right">5.3x</td><td class="mono t-right up">12.1%</td><td><span class="tag tag-amber">Volátil</span></td></tr>
+            <tr><td><b>Grupo Energía Bogotá</b></td><td class="mono tag tag-gray">GEB</td><td style="color:var(--muted)">Utilities</td><td class="mono t-right up">3.1%</td><td class="mono t-right up">11.4%</td><td class="mono t-right">12.4x</td><td class="mono t-right up">5.8%</td><td><span class="tag tag-green">Defensivo</span></td></tr>
+            <tr><td><b>Grupo Argos</b></td><td class="mono tag tag-gray">GRUPOARGOS</td><td style="color:var(--muted)">Infraestructura</td><td class="mono t-right up">2.4%</td><td class="mono t-right up">8.7%</td><td class="mono t-right">9.8x</td><td class="mono t-right up">2.1%</td><td><span class="tag tag-blue">Crecimiento</span></td></tr>
+            <tr><td><b>Grupo Aval</b></td><td class="mono tag tag-gray">PFAVAL</td><td style="color:var(--muted)">Financiero</td><td class="mono t-right up">1.2%</td><td class="mono t-right up">9.3%</td><td class="mono t-right">6.2x</td><td class="mono t-right up">5.2%</td><td><span class="tag tag-gray">Moderado</span></td></tr>
+            <tr><td><b>Nutresa</b></td><td class="mono tag tag-gray">NUTRESA</td><td style="color:var(--muted)">Consumo</td><td class="mono t-right up">4.1%</td><td class="mono t-right up">12.6%</td><td class="mono t-right">13.1x</td><td class="mono t-right up">1.8%</td><td><span class="tag tag-green">Sólido</span></td></tr>
+          </tbody>
+        </table>
+        <div style="font-size:10px;color:var(--hint);margin-top:10px">* KPIs referenciales basados en últimos reportes disponibles. No constituye asesoría de inversión.</div>
+      </div>
+    </div>
+
+    <div class="card" id="ia-mercado-card" style="display:none">
+      <div class="card-header"><div class="card-title">Análisis IA del mercado</div><div class="card-sub" id="ia-fecha"></div></div>
+      <div class="card-body" id="ia-mercado-body" style="font-size:12.5px;line-height:1.7;color:var(--muted)"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SEGUIMIENTO (nuevo) ══ -->
+<div id="sec-seguimiento" class="section">
+  <div class="topbar"><div><div class="page-title">Seguimiento de inversiones</div><div class="page-sub">Historial de movimientos · Evolución · Alertas de comportamiento</div></div><div class="top-actions"><button class="btn btn-primary btn-sm" onclick="openMovModal()"><i class="ti ti-plus" aria-hidden="true"></i> Movimiento</button></div></div>
+  <div style="margin-top:16px" id="seg-container">
+    <div class="empty"><div class="empty-icon">📊</div>Registra inversiones en Renta Fija, Variable, Inmobiliario o USD<br>para ver su seguimiento aquí.</div>
+  </div>
+</div>
+
+<!-- MOV MODAL (inline, not fixed) -->
+<div id="mov-form" style="display:none;padding:16px 20px 0">
+  <div class="card">
+    <div class="card-header"><div class="card-title">Registrar movimiento</div><button class="btn-icon btn-sm" onclick="closeMovModal()">✕</button></div>
+    <div class="card-body">
+      <div class="form-grid g3f">
+        <div class="form-group"><label>Inversión</label><select id="mov-inv" onchange="updateMovInv()"><option value="">Selecciona...</option></select></div>
+        <div class="form-group"><label>Tipo de movimiento</label>
+          <select id="mov-tipo">
+            <option value="aporte">Aporte adicional</option>
+            <option value="retiro">Retiro parcial</option>
+            <option value="rendimiento">Rendimiento / Dividendo recibido</option>
+            <option value="actualizacion">Actualización de precio/valor</option>
+            <option value="canon">Canon recibido</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Monto ($)</label><input type="number" id="mov-monto" placeholder="500000"/></div>
+        <div class="form-group"><label>Precio/Valor unitario (opcional)</label><input type="number" id="mov-precio" placeholder="Solo para acciones/unidades"/></div>
+        <div class="form-group"><label>Fecha</label><input type="date" id="mov-fecha"/></div>
+        <div class="form-group"><label>Contexto de mercado</label><input type="text" id="mov-contexto" placeholder="TRM, noticias, motivo del movimiento..."/></div>
+      </div>
+      <div class="form-actions"><button class="btn btn-primary" onclick="addMovimiento()">Guardar movimiento</button><button class="btn" onclick="closeMovModal()">Cancelar</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ INGRESOS ══ -->
+<div id="sec-ingresos" class="section">
+  <div class="topbar"><div><div class="page-title">Ingresos</div><div class="page-sub">Fuentes de ingreso mensual y eventual</div></div></div>
+  <div style="margin-top:16px">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Registrar ingreso</div></div>
+      <div class="card-body">
+        <div class="form-grid g3f">
+          <div class="form-group"><label>Categoría</label><select id="ing-cat"><option>Salario / Nómina</option><option>Honorarios / Freelance</option><option>Negocio propio</option><option>Arriendo recibido</option><option>Dividendos / Rendimientos</option><option>Bonificación</option><option>Pensión</option><option>Transferencia familiar</option><option>Venta de activo</option><option>Otro</option></select></div>
+          <div class="form-group"><label>Descripción</label><input type="text" id="ing-desc" placeholder="Empresa ABC — salario"/></div>
+          <div class="form-group"><label>Monto ($)</label><input type="number" id="ing-monto" placeholder="4000000"/></div>
+          <div class="form-group"><label>Fecha</label><input type="date" id="ing-fecha"/></div>
+          <div class="form-group"><label>Periodicidad</label><select id="ing-period"><option value="mensual">Mensual</option><option value="unico">Único</option><option value="trimestral">Trimestral</option><option value="anual">Anual</option></select></div>
+          <div class="form-group"><label>Notas</label><input type="text" id="ing-notas" placeholder="Neto de retenciones..."/></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-primary" onclick="addIng()">Guardar</button><button class="btn" onclick="clr('ing')">Limpiar</button></div>
+      </div>
+    </div>
+    <div class="kpi-grid g3"><div class="kpi"><div class="kpi-label">Total mes</div><div class="kpi-val sm" id="ing-total">$0</div></div><div class="kpi"><div class="kpi-label">Recurrentes/mes</div><div class="kpi-val sm" id="ing-rec">$0</div></div><div class="kpi"><div class="kpi-label">Eventuales</div><div class="kpi-val sm" id="ing-ev">$0</div></div></div>
+    <div class="card"><div class="card-header"><div class="card-title">Historial</div></div><div id="tabla-ing"><div class="empty"><div class="empty-icon">💰</div>Sin ingresos</div></div></div>
+  </div>
+</div>
+
+<!-- ══ GASTOS ══ -->
+<div id="sec-gastos" class="section">
+  <div class="topbar"><div><div class="page-title">Gastos</div><div class="page-sub">Control detallado · Presupuestos · Gastos hormiga</div></div></div>
+  <div style="margin-top:16px">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Registrar gasto</div></div>
+      <div class="card-body">
+        <div class="form-grid g3f">
+          <div class="form-group"><label>Categoría</label><select id="gasto-cat"><option>🏠 Vivienda</option><option>🛒 Alimentación</option><option>🚗 Transporte</option><option>⚡ Servicios públicos</option><option>📱 Telefonía / Internet</option><option>🏥 Salud</option><option>🎓 Educación</option><option>👗 Ropa</option><option>🎬 Ocio / Entretenimiento</option><option>🍽️ Restaurantes</option><option>✈️ Viajes</option><option>💆 Bienestar / Gym</option><option>📦 Suscripciones</option><option>💳 Cuota deuda</option><option>📊 Impuestos</option><option>Otro</option></select></div>
+          <div class="form-group"><label>Descripción</label><input type="text" id="gasto-desc" placeholder="Arriendo Laureles..."/></div>
+          <div class="form-group"><label>Monto ($)</label><input type="number" id="gasto-monto" placeholder="1200000"/></div>
+          <div class="form-group"><label>Fecha</label><input type="date" id="gasto-fecha"/></div>
+          <div class="form-group"><label>Tipo</label><select id="gasto-tipo"><option value="fijo">Fijo</option><option value="variable">Variable</option><option value="hormiga">Hormiga</option><option value="imprevisto">Imprevisto</option></select></div>
+          <div class="form-group"><label>Presupuesto categoría ($)</label><input type="number" id="gasto-presup" placeholder="1200000"/></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-primary" onclick="addGasto()">Guardar</button><button class="btn" onclick="clr('gasto')">Limpiar</button></div>
+      </div>
+    </div>
+    <div class="kpi-grid g4"><div class="kpi"><div class="kpi-label">Total gastos</div><div class="kpi-val sm" id="gasto-tot">$0</div></div><div class="kpi"><div class="kpi-label">Fijos</div><div class="kpi-val sm" id="gasto-fij">$0</div></div><div class="kpi"><div class="kpi-label">Variables</div><div class="kpi-val sm" id="gasto-var">$0</div></div><div class="kpi"><div class="kpi-label">Hormiga</div><div class="kpi-val sm" id="gasto-hor">$0</div></div></div>
+    <div class="card"><div class="card-header"><div class="card-title">Historial de gastos</div></div><div id="tabla-gasto"><div class="empty"><div class="empty-icon">🧾</div>Sin gastos</div></div></div>
+  </div>
+</div>
+
+<!-- ══ AHORRO ══ -->
+<div id="sec-ahorro" class="section">
+  <div class="topbar"><div><div class="page-title">Ahorro</div><div class="page-sub">Fondo de emergencia · Metas · Progreso</div></div></div>
+  <div style="margin-top:16px">
+    <div class="alert alert-info">La regla del fondo de emergencia recomienda 3–6 meses de gastos fijos en cuentas líquidas antes de invertir en activos de riesgo.</div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Nueva meta de ahorro</div></div>
+      <div class="card-body">
+        <div class="form-grid g3f">
+          <div class="form-group"><label>Nombre</label><input type="text" id="meta-nom" placeholder="Fondo emergencia / Vacaciones..."/></div>
+          <div class="form-group"><label>Objetivo ($)</label><input type="number" id="meta-obj" placeholder="15000000"/></div>
+          <div class="form-group"><label>Ahorrado actual ($)</label><input type="number" id="meta-act" placeholder="5000000"/></div>
+          <div class="form-group"><label>Ahorro mensual ($)</label><input type="number" id="meta-men" placeholder="500000"/></div>
+          <div class="form-group"><label>Fecha límite</label><input type="date" id="meta-fecha"/></div>
+          <div class="form-group"><label>Tipo de cuenta</label><select id="meta-tipo"><option>Cuenta de ahorros</option><option>CDT corto plazo</option><option>Cajita Nu / Nequi</option><option>FIC monetario</option><option>Efectivo</option></select></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-primary" onclick="addMeta()">Guardar</button><button class="btn" onclick="clr('meta')">Limpiar</button></div>
+      </div>
+    </div>
+    <div class="kpi-grid g3"><div class="kpi"><div class="kpi-label">Total ahorrado</div><div class="kpi-val sm" id="ah-tot">$0</div></div><div class="kpi"><div class="kpi-label">Meses fondo emergencia</div><div class="kpi-val sm" id="ah-mes">—</div><div class="kpi-sub">vs gastos fijos</div></div><div class="kpi"><div class="kpi-label">Metas activas</div><div class="kpi-val sm" id="ah-metas">0</div></div></div>
+    <div class="card"><div class="card-header"><div class="card-title">Mis metas</div></div><div id="tabla-meta"><div class="empty"><div class="empty-icon">🏧</div>Sin metas</div></div></div>
+  </div>
+</div>
+
+<!-- ══ RENTA FIJA ══ -->
+<div id="sec-renta-fija" class="section">
+  <div class="topbar"><div><div class="page-title">Renta fija</div><div class="page-sub">CDT · TES · Bonos · FIC monetarios</div></div></div>
+  <div style="margin-top:16px">
+    <div class="alert alert-info">Referencia jul 2026 — CDT neobancos: Nu hasta 12.4% E.A., Lulo Bank hasta 13% E.A. Fogafín cubre hasta $50M por entidad.</div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Registrar inversión</div></div>
+      <div class="card-body">
+        <div class="form-grid g3f">
+          <div class="form-group"><label>Producto</label><select id="rf-tipo"><option>CDT Bancolombia</option><option>CDT Davivienda</option><option>CDT BBVA</option><option>CDT Nu Colombia</option><option>CDT Lulo Bank</option><option>CDT Nequi/Daviplata</option><option>TES Renta Fija</option><option>TES UVR</option><option>Bono Corporativo</option><option>FIC Renta Fija (Tyba)</option><option>FIC Mercado Monetario</option><option>Otro</option></select></div>
+          <div class="form-group"><label>Canal</label><select id="rf-canal"><option>App Bancolombia</option><option>Nu Colombia</option><option>Lulo Bank</option><option>Tyba</option><option>MejorCDT</option><option>Daviplata</option><option>Valores Bancolombia</option><option>Trii</option><option>Otro</option></select></div>
+          <div class="form-group"><label>Monto ($)</label><input type="number" id="rf-monto" placeholder="1100000"/></div>
+          <div class="form-group"><label>Tasa E.A. bruta (%)</label><input type="number" id="rf-tasa" step="0.1" placeholder="12.4"/></div>
+          <div class="form-group"><label>Comisión E.A. (%)</label><input type="number" id="rf-com" step="0.1" placeholder="1.0"/></div>
+          <div class="form-group"><label>Pago de rendimientos</label><select id="rf-pago"><option>Al vencimiento</option><option>Mensual</option><option>Trimestral</option><option>Semestral</option></select></div>
+          <div class="form-group"><label>Fecha inicio</label><input type="date" id="rf-ini"/></div>
+          <div class="form-group"><label>Fecha vencimiento</label><input type="date" id="rf-vence"/></div>
+          <div class="form-group"><label>Estado</label><select id="rf-estado"><option value="activo">Activo</option><option value="vencido">Vencido</option><option value="pendiente">Pendiente</option></select></div>
+          <div class="form-group full"><label>Notas</label><input type="text" id="rf-notas" placeholder="Condiciones, renovación automática..."/></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-primary" onclick="addRF()">Guardar</button><button class="btn" onclick="clr('rf')">Limpiar</button></div>
+      </div>
+    </div>
+    <div class="kpi-grid g3"><div class="kpi"><div class="kpi-label">Total RF</div><div class="kpi-val sm" id="rf-tot">$0</div></div><div class="kpi"><div class="kpi-label">Rend. anual esperado</div><div class="kpi-val sm" id="rf-rend">$0</div></div><div class="kpi"><div class="kpi-label">Tasa neta promedio</div><div class="kpi-val sm" id="rf-tasa-p">0%</div></div></div>
+    <div class="card"><div class="card-header"><div class="card-title">Mis CDTs y bonos</div></div><div id="tabla-rf"><div class="empty"><div class="empty-icon">🏦</div>Sin registros</div></div></div>
+  </div>
+</div>
+
+<!-- ══ RENTA VARIABLE ══ -->
+<div id="sec-renta-variable" class="section">
+  <div class="topbar"><div><div class="page-title">Renta variable</div><div class="page-sub">Acciones · ETF · FIC · Cripto</div></div></div>
+  <div style="margin-top:16px">
+    <div class="alert alert-warn">Rentabilidades no garantizadas. Actualiza el precio actual de cada posición para calcular la ganancia/pérdida real.</div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Registrar posición</div></div>
+      <div class="card-body">
+        <div class="form-grid g3f">
+          <div class="form-group"><label>Tipo de activo</label><select id="rv-tipo"><option>Acción BVC Colombia</option><option>Acción internacional</option><option>ETF local</option><option>ETF internacional</option><option>FIC Acciones Colombia</option><option>FIC Acciones Global</option><option>FIC Balanceado</option><option>Fondo Inmobiliario</option><option>Criptomoneda</option><option>Otro</option></select></div>
+          <div class="form-group"><label>Ticker / Nombre</label><input type="text" id="rv-ticker" placeholder="PFBCOL, ECOPETROL, VOO…"/></div>
+          <div class="form-group"><label>Canal</label><select id="rv-canal"><option>Valores Bancolombia</option><option>Trii</option><option>Tyba</option><option>Davivienda Corredores</option><option>Acciones y Valores</option><option>BTG Pactual</option><option>Itaú</option><option>Binance</option><option>Otro</option></select></div>
+          <div class="form-group"><label>Cantidad</label><input type="number" id="rv-cant" step="0.0001" placeholder="10"/></div>
+          <div class="form-group"><label>Precio compra ($)</label><input type="number" id="rv-pcomp" placeholder="14800"/></div>
+          <div class="form-group"><label>Precio actual ($)</label><input type="number" id="rv-pact" placeholder="15200"/></div>
+          <div class="form-group"><label>Comisión (%)</label><input type="number" id="rv-com" step="0.01" placeholder="0.3"/></div>
+          <div class="form-group"><label>Fecha compra</label><input type="date" id="rv-fecha"/></div>
+          <div class="form-group"><label>Perfil riesgo</label><select id="rv-riesgo"><option>Moderado</option><option>Agresivo</option><option>Muy agresivo</option><option>Conservador</option></select></div>
+          <div class="form-group full"><label>Tesis de inversión</label><input type="text" id="rv-tesis" placeholder="Margen de seguridad Graham, crecimiento Fisher..."/></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-primary" onclick="addRV()">Guardar</button><button class="btn" onclick="clr('rv')">Limpiar</button></div>
+      </div>
+    </div>
+    <div class="kpi-grid g3"><div class="kpi"><div class="kpi-label">Valor actual RV</div><div class="kpi-val sm" id="rv-val">$0</div></div><div class="kpi"><div class="kpi-label">Costo total</div><div class="kpi-val sm" id="rv-costo">$0</div></div><div class="kpi"><div class="kpi-label">Ganancia / Pérdida</div><div class="kpi-val sm" id="rv-gp">$0</div></div></div>
+    <div class="card"><div class="card-header"><div class="card-title">Mis posiciones</div></div><div id="tabla-rv"><div class="empty"><div class="empty-icon">📈</div>Sin posiciones</div></div></div>
+  </div>
+</div>
+
+<!-- ══ INMOBILIARIO ══ -->
+<div id="sec-inmobiliario" class="section">
+  <div class="topbar"><div><div class="page-title">Inmobiliario</div><div class="page-sub">Finca raíz · Fondos · Crowdfunding · Fiduciarias</div></div></div>
+  <div style="margin-top:16px">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Registrar activo</div></div>
+      <div class="card-body">
+        <div class="form-grid g3f">
+          <div class="form-group"><label>Tipo</label><select id="inmo-tipo"><option>Apartamento / Casa</option><option>Local comercial</option><option>Oficina</option><option>Bodega</option><option>Lote / Terreno</option><option>Fondo SiRenta</option><option>Fondo inmobiliario otro</option><option>Crowdfunding inmobiliario</option><option>Fideicomiso</option></select></div>
+          <div class="form-group"><label>Nombre</label><input type="text" id="inmo-nombre" placeholder="Apto 301 Laureles / Fondo SiRenta"/></div>
+          <div class="form-group"><label>Canal / Administrador</label><select id="inmo-canal"><option>Acciones y Valores (SiRenta)</option><option>Vikua</option><option>Ladrillo</option><option>Patio Inmobiliario</option><option>Bancolombia Fiduciaria</option><option>Davivienda Fiduciaria</option><option>Alianza Fiduciaria</option><option>Directo</option><option>Otro</option></select></div>
+          <div class="form-group"><label>Valor compra ($)</label><input type="number" id="inmo-compra" placeholder="1100000"/></div>
+          <div class="form-group"><label>Valor actual ($)</label><input type="number" id="inmo-actual" placeholder="1200000"/></div>
+          <div class="form-group"><label>Canon mensual ($)</label><input type="number" id="inmo-canon" placeholder="11000"/></div>
+          <div class="form-group"><label>Tasa declarada E.A. (%)</label><input type="number" id="inmo-tasa" step="0.1" placeholder="13.4"/></div>
+          <div class="form-group"><label>Comisión (%)</label><input type="number" id="inmo-com" step="0.1" placeholder="1.0"/></div>
+          <div class="form-group"><label>Fecha inicio</label><input type="date" id="inmo-fecha"/></div>
+          <div class="form-group full"><label>Notas</label><input type="text" id="inmo-notas" placeholder="Dirección, plazo fondo..."/></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-primary" onclick="addInmo()">Guardar</button><button class="btn" onclick="clr('inmo')">Limpiar</button></div>
+      </div>
+    </div>
+    <div class="card"><div class="card-header"><div class="card-title">Mis activos inmobiliarios</div></div><div id="tabla-inmo"><div class="empty"><div class="empty-icon">🏢</div>Sin activos</div></div></div>
+  </div>
+</div>
+
+<!-- ══ DÓLARES ══ -->
+<div id="sec-dolares" class="section">
+  <div class="topbar"><div><div class="page-title">Dólares / USD</div><div class="page-sub">Cobertura cambiaria · ETF globales · Cuentas forex</div></div></div>
+  <div style="margin-top:16px">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Registrar posición USD</div></div>
+      <div class="card-body">
+        <div class="form-grid g3f">
+          <div class="form-group"><label>Instrumento</label><select id="usd-tipo"><option>Dólares efectivo</option><option>Cuenta USD</option><option>ETF USD (S&P500, NASDAQ)</option><option>Acciones USA</option><option>Bono soberano USD</option><option>USDT / USDC</option><option>Inversión exterior</option><option>Otro</option></select></div>
+          <div class="form-group"><label>Descripción / Ticker</label><input type="text" id="usd-nombre" placeholder="VOO, QQQ, AAPL…"/></div>
+          <div class="form-group"><label>Canal</label><select id="usd-canal"><option>Trii</option><option>Tyba</option><option>Interactive Brokers</option><option>Charles Schwab</option><option>Wise / Remitly</option><option>Efectivo / Casa cambio</option><option>Binance</option><option>Otro</option></select></div>
+          <div class="form-group"><label>Cantidad USD</label><input type="number" id="usd-cant" step="0.01" placeholder="100"/></div>
+          <div class="form-group"><label>TRM de compra</label><input type="number" id="usd-trm" placeholder="4150"/></div>
+          <div class="form-group"><label>Rend. anual USD (%)</label><input type="number" id="usd-rend" step="0.1" placeholder="8.5"/></div>
+          <div class="form-group"><label>Fecha</label><input type="date" id="usd-fecha"/></div>
+          <div class="form-group full"><label>Notas</label><input type="text" id="usd-notas" placeholder="Propósito, estrategia de cobertura..."/></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-primary" onclick="addUSD()">Guardar</button><button class="btn" onclick="clr('usd')">Limpiar</button></div>
+      </div>
+    </div>
+    <div class="card"><div class="card-header"><div class="card-title">Posiciones en USD</div></div><div id="tabla-usd"><div class="empty"><div class="empty-icon">💵</div>Sin posiciones</div></div></div>
+  </div>
+</div>
+
+<!-- ══ DEUDAS ══ -->
+<div id="sec-deudas" class="section">
+  <div class="topbar"><div><div class="page-title">Deudas</div><div class="page-sub">Método avalancha — mayor tasa primero</div></div></div>
+  <div style="margin-top:16px">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Registrar deuda</div></div>
+      <div class="card-body">
+        <div class="form-grid g3f">
+          <div class="form-group"><label>Tipo</label><select id="deu-tipo"><option>Tarjeta de crédito</option><option>Crédito consumo</option><option>Crédito hipotecario</option><option>Leasing</option><option>Crédito vehículo</option><option>Libranza</option><option>ICETEX</option><option>Empresarial</option><option>Familiar / informal</option><option>Otro</option></select></div>
+          <div class="form-group"><label>Entidad</label><input type="text" id="deu-entidad" placeholder="Bancolombia, Falabella…"/></div>
+          <div class="form-group"><label>Saldo actual ($)</label><input type="number" id="deu-saldo" placeholder="5000000"/></div>
+          <div class="form-group"><label>Cuota mensual ($)</label><input type="number" id="deu-cuota" placeholder="450000"/></div>
+          <div class="form-group"><label>Tasa E.A. (%)</label><input type="number" id="deu-tasa" step="0.1" placeholder="28.5"/></div>
+          <div class="form-group"><label>Cuotas restantes</label><input type="number" id="deu-cuotas" placeholder="24"/></div>
+          <div class="form-group"><label>Próximo pago</label><input type="date" id="deu-fecha"/></div>
+          <div class="form-group"><label>Prioridad</label><select id="deu-prior"><option value="alta">Alta</option><option value="media">Media</option><option value="baja">Baja</option></select></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-primary" onclick="addDeu()">Guardar</button><button class="btn" onclick="clr('deu')">Limpiar</button></div>
+      </div>
+    </div>
+    <div class="kpi-grid g3"><div class="kpi"><div class="kpi-label">Total deudas</div><div class="kpi-val sm" id="deu-tot">$0</div></div><div class="kpi"><div class="kpi-label">Cuotas/mes</div><div class="kpi-val sm" id="deu-cuot">$0</div></div><div class="kpi"><div class="kpi-label">Interés total estimado</div><div class="kpi-val sm" id="deu-int">$0</div></div></div>
+    <div class="card"><div class="card-header"><div class="card-title">Mis deudas (ordenadas por tasa)</div></div><div id="tabla-deu"><div class="empty"><div class="empty-icon">💳</div>Sin deudas</div></div></div>
+  </div>
+</div>
+
+<!-- ══ SIMULADOR ══ -->
+<div id="sec-simulador" class="section">
+  <div class="topbar"><div><div class="page-title">Simulador</div><div class="page-sub">Interés compuesto · Proyección año a año</div></div></div>
+  <div style="margin-top:16px">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Parámetros</div></div>
+      <div class="card-body">
+        <div class="form-grid g3f">
+          <div class="form-group"><label>Monto inicial ($)</label><input type="number" id="sim-m" value="1100000"/></div>
+          <div class="form-group"><label>Tasa bruta E.A. (%)</label><input type="number" id="sim-t" value="13.4" step="0.1"/></div>
+          <div class="form-group"><label>Comisión E.A. (%)</label><input type="number" id="sim-c" value="1.0" step="0.1"/></div>
+          <div class="form-group"><label>Horizonte (años)</label><input type="number" id="sim-a" value="5" min="1" max="30"/></div>
+          <div class="form-group"><label>Aporte mensual ($)</label><input type="number" id="sim-ap" value="0"/></div>
+          <div class="form-group"><label>Capitalización</label><select id="sim-cap"><option value="12">Mensual</option><option value="4">Trimestral</option><option value="2">Semestral</option><option value="1">Anual</option></select></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-primary" onclick="simular()">Simular</button></div>
+        <div id="sim-out" style="display:none;margin-top:16px">
+          <div class="kpi-grid g3"><div class="kpi"><div class="kpi-label">Capital final</div><div class="kpi-val sm" id="sim-final"></div></div><div class="kpi"><div class="kpi-label">Ganancia neta</div><div class="kpi-val sm" id="sim-gan"></div></div><div class="kpi"><div class="kpi-label">Tasa neta E.A.</div><div class="kpi-val sm" id="sim-tn"></div></div></div>
+          <div class="card"><div class="card-header"><div class="card-title">Proyección año a año</div></div><div id="sim-tabla"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div><!-- /app -->
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const S={trm:4200,ingresos:[],gastos:[],metas:[],rentaFija:[],rentaVariable:[],inmobiliario:[],dolares:[],deudas:[],movimientos:[]};
+function save(){try{localStorage.setItem('ftco3',JSON.stringify(S));}catch(e){}}
+function load(){try{const d=localStorage.getItem('ftco3');if(d)Object.assign(S,JSON.parse(d));}catch(e){}}
+
+const COP=n=>'$'+Math.round(n).toLocaleString('es-CO');
+const Pct=n=>(+n).toFixed(2)+'%';
+const hoy=()=>new Date().toISOString().split('T')[0];
+
+function toast(msg,ok=true){const t=document.getElementById('toast');t.textContent=msg;t.style.borderLeftColor=ok?'#0f7a52':'#c0392b';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+
+function nav(id,el){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  if(el)el.classList.add('active');
+  if(id==='dashboard')renderDash();
+  if(id==='seguimiento')renderSeguimiento();
+  if(id==='mercado')fetchMarketData();
+}
+
+function clr(p){document.querySelectorAll(`[id^="${p}-"]`).forEach(el=>{if(el.tagName==='SELECT')el.selectedIndex=0;else el.value='';})}
+
+function tp(){
+  const rf=S.rentaFija.reduce((a,r)=>a+(+r.monto||0),0);
+  const rv=S.rentaVariable.reduce((a,r)=>a+(+r.valorActual||0),0);
+  const inmo=S.inmobiliario.reduce((a,r)=>a+(+r.actual||0),0);
+  const usd=S.dolares.reduce((a,r)=>a+(+r.cantUSD||0)*S.trm,0);
+  return{rf,rv,inmo,usd,total:rf+rv+inmo+usd};
+}
+
+/* ── MARKET DATA ── */
+async function fetchMarketData(){
+  try{
+    const r=await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+    if(r.ok){
+      const d=await r.json();
+      const cop=d.rates['COP'];
+      if(cop){
+        S.trm=Math.round(cop);
+        document.getElementById('trm-global').value=S.trm;
+        save();
+        ['mk-usd','m-usd-val'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=COP(cop).replace('$','');});
+        const prev=4180;const delta=((cop-prev)/prev*100);
+        ['mk-usd-d'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=(delta>0?'+':'')+delta.toFixed(2)+'%';el.className='mkt-delta '+(delta>0?'up':'dn');}});
+        document.getElementById('m-usd-s').textContent='Actualizado '+new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+      }
+    }
+  }catch(e){}
+  try{
+    const r2=await fetch('https://api.exchangerate-api.com/v4/latest/XAU');
+    if(r2.ok){
+      const d2=await r2.json();
+      const usd=d2.rates['USD'];
+      if(usd){
+        const oroEl=document.getElementById('mk-oro');if(oroEl)oroEl.textContent='$'+Math.round(usd).toLocaleString('en-US');
+        const oroElM=document.getElementById('m-oro-val');if(oroElM)oroElM.textContent='USD $'+Math.round(usd).toLocaleString('en-US');
+        const oroD=document.getElementById('mk-oro-d');if(oroD){oroD.textContent='+0.8%';oroD.className='mkt-delta up';}
+      }
+    }
+  }catch(e){}
+}
+function fetchTRM(){fetchMarketData();toast('Actualizando datos de mercado…');}
+
+/* ── IA ANÁLISIS MERCADO ── */
+async function loadMercadoIA(){
+  const card=document.getElementById('ia-mercado-card');
+  const body=document.getElementById('ia-mercado-body');
+  const fecha=document.getElementById('ia-fecha');
+  card.style.display='block';
+  body.innerHTML='<span style="color:var(--muted);animation:pulse 1.5s infinite">Analizando contexto de mercado colombiano…</span>';
+  fecha.textContent=new Date().toLocaleString('es-CO');
+  try{
+    const portafolio=tp();
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:900,messages:[{role:'user',content:`Eres un analista financiero experto en el mercado colombiano. Con base en el contexto de julio 2026, redacta un análisis breve (máximo 6 párrafos, sin markdown, solo texto limpio con saltos de línea) que incluya:\n1. Panorama macro Colombia (inflación ~5.2%, tasa BR ~9.5%, TRM ~${S.trm} COP/USD)\n2. Oportunidades en renta fija (CDTs, TES)\n3. Señales en el COLCAP y acciones top (PFBCOL, Ecopetrol, GEB)\n4. Contexto del dólar y cobertura cambiaria\n5. Una recomendación concreta para un portafolio con RF=${COP(portafolio.rf)}, RV=${COP(portafolio.rv)}, Inmo=${COP(portafolio.inmo)}, USD=${COP(portafolio.usd)}\nSé preciso, imparcial y sin alucinar datos no conocidos. Indica cuando algo es estimado.`}]})});
+    const d=await resp.json();
+    const txt=d.content?.map(c=>c.text||'').join('')||'No se pudo obtener análisis.';
+    body.innerHTML=txt.split('\n').filter(l=>l.trim()).map(l=>`<p style="margin-bottom:10px">${l}</p>`).join('');
+  }catch(e){body.innerHTML='<span style="color:var(--red)">Error al conectar con el análisis IA. Verifica tu conexión.</span>';}
+}
+
+/* ── SEGUIMIENTO HISTÓRICO ── */
+function openMovModal(){
+  const sel=document.getElementById('mov-inv');
+  sel.innerHTML='<option value="">Selecciona inversión…</option>';
+  const all=[
+    ...S.rentaFija.map((r,i)=>({id:`rf-${i}`,label:`[RF] ${r.tipo} — ${COP(r.monto)}`,cat:'RF'})),
+    ...S.rentaVariable.map((r,i)=>({id:`rv-${i}`,label:`[RV] ${r.ticker||r.tipo} — ${COP(r.costoTotal)}`,cat:'RV'})),
+    ...S.inmobiliario.map((r,i)=>({id:`inmo-${i}`,label:`[Inmo] ${r.nombre||r.tipo}`,cat:'Inmo'})),
+    ...S.dolares.map((r,i)=>({id:`usd-${i}`,label:`[USD] ${r.nombre||r.tipo} — $${r.cantUSD}`,cat:'USD'})),
+  ];
+  all.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.label;sel.appendChild(o);});
+  document.getElementById('mov-fecha').value=hoy();
+  document.getElementById('mov-form').style.display='block';
+}
+function closeMovModal(){document.getElementById('mov-form').style.display='none';}
+
+function addMovimiento(){
+  const invId=document.getElementById('mov-inv').value;
+  const tipo=document.getElementById('mov-tipo').value;
+  const monto=parseFloat(document.getElementById('mov-monto').value)||0;
+  const precio=parseFloat(document.getElementById('mov-precio').value)||null;
+  const fecha=document.getElementById('mov-fecha').value||hoy();
+  const contexto=document.getElementById('mov-contexto').value;
+  if(!invId||!monto){toast('Selecciona la inversión e ingresa el monto',false);return;}
+  const mov={id:Date.now(),invId,tipo,monto,precio,fecha,contexto,trm:S.trm};
+  S.movimientos.push(mov);
+  // Update underlying investment value if it's an aporte
+  if(tipo==='aporte'||tipo==='actualizacion'){
+    const [cat,idx]=invId.split('-');
+    const i=parseInt(idx);
+    if(cat==='rf'&&S.rentaFija[i]){S.rentaFija[i].monto=(+S.rentaFija[i].monto||0)+monto;S.rentaFija[i].rendEsperado=S.rentaFija[i].monto*S.rentaFija[i].tasaNeta/100;}
+    if(cat==='rv'&&S.rentaVariable[i]&&precio){S.rentaVariable[i].precioActual=precio;S.rentaVariable[i].valorActual=S.rentaVariable[i].cantidad*precio;S.rentaVariable[i].ganancia=S.rentaVariable[i].valorActual-S.rentaVariable[i].costoTotal;S.rentaVariable[i].retornoPct=((precio-S.rentaVariable[i].precioCompra)/S.rentaVariable[i].precioCompra*100);}
+    if(cat==='inmo'&&S.inmobiliario[i]){S.inmobiliario[i].actual=(+S.inmobiliario[i].actual||0)+monto;}
+  }
+  save();renderSeguimiento();closeMovModal();renderDash();
+  clr('mov');toast('Movimiento registrado');
+}
+
+function renderSeguimiento(){
+  const container=document.getElementById('seg-container');
+  const badge=document.getElementById('seg-badge');
+  const all=[
+    ...S.rentaFija.map((r,i)=>({...r,_cat:'RF',_idx:i,_id:`rf-${i}`,_icon:'🏦',_color:'#2a78d6',_name:r.tipo,_value:+r.monto||0,_rendimiento:+r.rendEsperado||0,_pct:+r.tasaNeta||0})),
+    ...S.rentaVariable.map((r,i)=>({...r,_cat:'RV',_idx:i,_id:`rv-${i}`,_icon:'📈',_color:'#1baf7a',_name:r.ticker||r.tipo,_value:+r.valorActual||0,_rendimiento:+r.ganancia||0,_pct:+r.retornoPct||0})),
+    ...S.inmobiliario.map((r,i)=>({...r,_cat:'Inmo',_idx:i,_id:`inmo-${i}`,_icon:'🏢',_color:'#eda100',_name:r.nombre||r.tipo,_value:+r.actual||0,_rendimiento:+r.rentaAnual||0,_pct:+r.tasaNeta||0})),
+    ...S.dolares.map((r,i)=>({...r,_cat:'USD',_idx:i,_id:`usd-${i}`,_icon:'💵',_color:'#4a3aa7',_name:r.nombre||r.tipo,_value:(+r.cantUSD||0)*S.trm,_rendimiento:+r.gpCambiaria||0,_pct:+r.rendUSD||0})),
+  ];
+  badge.textContent=all.length;
+  if(!all.length){container.innerHTML='<div class="empty"><div class="empty-icon">📊</div>Registra inversiones para ver el seguimiento aquí.</div>';return;}
+
+  container.innerHTML=all.map(inv=>{
+    const movs=S.movimientos.filter(m=>m.invId===inv._id).sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+    const isUp=inv._rendimiento>=0;
+    const tipoColor={'RF':'tag-blue','RV':'tag-green','Inmo':'tag-amber','USD':'tag-purple'}[inv._cat]||'tag-gray';
+    const movRows=movs.length?movs.slice(0,5).map(m=>`
+      <div class="mov-item">
+        <div class="mov-icon" style="background:${m.tipo==='aporte'?'#e8f5ee':m.tipo==='retiro'?'#fdecea':m.tipo==='rendimiento'||m.tipo==='canon'?'#e8f5ee':'#f0efec'}">
+          ${m.tipo==='aporte'?'＋':m.tipo==='retiro'?'－':m.tipo==='rendimiento'||m.tipo==='canon'?'💸':'↻'}
+        </div>
+        <div class="mov-body">
+          <div class="mov-title">${m.tipo.charAt(0).toUpperCase()+m.tipo.slice(1)}</div>
+          <div class="mov-sub">${m.contexto||'—'} ${m.precio?'· Precio: '+COP(m.precio):''}</div>
+        </div>
+        <div>
+          <div class="mov-amount ${m.tipo==='retiro'?'dn':'up'}">${m.tipo==='retiro'?'−':'+'}${COP(m.monto)}</div>
+          <div class="mov-date">${m.fecha} · TRM ${m.trm?m.trm.toLocaleString('es-CO'):'—'}</div>
+        </div>
+      </div>`).join(''):'<div style="font-size:12px;color:var(--hint);padding:12px 0">Sin movimientos registrados. Usa el botón + Movimiento para actualizar.</div>';
+    return`
+    <div class="inv-card">
+      <div class="inv-card-top" onclick="toggleInv('inv-${inv._id}')">
+        <div class="inv-card-left">
+          <div class="inv-icon" style="background:${inv._color}22;font-size:14px">${inv._icon}</div>
+          <div>
+            <div class="inv-name">${inv._name}</div>
+            <div class="inv-meta"><span class="tag ${tipoColor}">${inv._cat}</span> ${inv.canal||inv._cat} ${inv.fecha?'· desde '+inv.fecha:''}</div>
+          </div>
+        </div>
+        <div class="inv-right">
+          <div class="inv-valor">${COP(inv._value)}</div>
+          <div class="inv-retorno ${isUp?'up':'dn'}">${isUp?'+':''}${inv._rendimiento!==0?COP(inv._rendimiento):Pct(inv._pct)}</div>
+        </div>
+      </div>
+      <div class="inv-body" id="inv-${inv._id}">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+          <div style="background:var(--bg);border-radius:8px;padding:10px">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Valor actual</div>
+            <div style="font-family:var(--font-mono,'monospace');font-size:14px;font-weight:500">${COP(inv._value)}</div>
+          </div>
+          <div style="background:var(--bg);border-radius:8px;padding:10px">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Rendimiento</div>
+            <div style="font-family:var(--font-mono,'monospace');font-size:14px;font-weight:500;color:${isUp?'var(--green)':'var(--red)'}">${isUp?'+':''}${COP(inv._rendimiento)}</div>
+          </div>
+          <div style="background:var(--bg);border-radius:8px;padding:10px">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Movimientos</div>
+            <div style="font-size:14px;font-weight:500">${movs.length}</div>
+          </div>
+        </div>
+        <div style="font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Historial de movimientos</div>
+        ${movRows}
+      </div>
+    </div>`}).join('');
+}
+
+function toggleInv(id){const el=document.getElementById(id);if(el)el.classList.toggle('open');}
+
+/* ── CRUD helpers ── */
+function addIng(){
+  const m=parseFloat(document.getElementById('ing-monto').value);
+  if(!m){toast('Ingresa un monto',false);return;}
+  S.ingresos.push({id:Date.now(),cat:document.getElementById('ing-cat').value,desc:document.getElementById('ing-desc').value,monto:m,fecha:document.getElementById('ing-fecha').value||hoy(),period:document.getElementById('ing-period').value,notas:document.getElementById('ing-notas').value});
+  save();renderIngresos();renderDash();clr('ing');toast('Ingreso guardado');
+}
+function renderIngresos(){
+  const hm=new Date();const am=hm.getFullYear();const mm=hm.getMonth();
+  const mes=S.ingresos.filter(i=>{const d=new Date(i.fecha||hoy());return d.getFullYear()===am&&d.getMonth()===mm;}).reduce((a,i)=>a+(+i.monto),0);
+  const rec=S.ingresos.filter(i=>i.period==='mensual').reduce((a,i)=>a+(+i.monto),0);
+  const ev=S.ingresos.filter(i=>i.period==='unico').reduce((a,i)=>a+(+i.monto),0);
+  document.getElementById('ing-total').textContent=COP(mes);
+  document.getElementById('ing-rec').textContent=COP(rec);
+  document.getElementById('ing-ev').textContent=COP(ev);
+  const c=document.getElementById('tabla-ing');
+  if(!S.ingresos.length){c.innerHTML='<div class="empty"><div class="empty-icon">💰</div>Sin ingresos</div>';return;}
+  c.innerHTML=`<table><thead><tr><th>Categoría</th><th>Descripción</th><th>Monto</th><th>Frecuencia</th><th>Fecha</th><th></th></tr></thead><tbody>${S.ingresos.slice().reverse().map((r,i)=>`<tr><td><span class="tag tag-green">${r.cat.split('/')[0].trim()}</span></td><td>${r.desc||'—'}</td><td class="mono up">${COP(r.monto)}</td><td style="color:var(--muted)">${r.period}</td><td style="color:var(--muted)">${r.fecha}</td><td><button class="btn btn-danger btn-sm" onclick="del('ingresos',${S.ingresos.length-1-i})">✕</button></td></tr>`).join('')}</tbody></table>`;
+}
+function addGasto(){
+  const m=parseFloat(document.getElementById('gasto-monto').value);
+  if(!m){toast('Ingresa un monto',false);return;}
+  S.gastos.push({id:Date.now(),cat:document.getElementById('gasto-cat').value,desc:document.getElementById('gasto-desc').value,monto:m,fecha:document.getElementById('gasto-fecha').value||hoy(),tipo:document.getElementById('gasto-tipo').value,presup:parseFloat(document.getElementById('gasto-presup').value)||0});
+  save();renderGastos();renderDash();clr('gasto');toast('Gasto guardado');
+}
+function renderGastos(){
+  const tot=S.gastos.reduce((a,g)=>a+(+g.monto),0);
+  const fij=S.gastos.filter(g=>g.tipo==='fijo').reduce((a,g)=>a+(+g.monto),0);
+  const vr=S.gastos.filter(g=>g.tipo==='variable').reduce((a,g)=>a+(+g.monto),0);
+  const hor=S.gastos.filter(g=>g.tipo==='hormiga').reduce((a,g)=>a+(+g.monto),0);
+  document.getElementById('gasto-tot').textContent=COP(tot);document.getElementById('gasto-fij').textContent=COP(fij);document.getElementById('gasto-var').textContent=COP(vr);document.getElementById('gasto-hor').textContent=COP(hor);
+  const c=document.getElementById('tabla-gasto');
+  if(!S.gastos.length){c.innerHTML='<div class="empty"><div class="empty-icon">🧾</div>Sin gastos</div>';return;}
+  c.innerHTML=`<table><thead><tr><th>Categoría</th><th>Descripción</th><th>Monto</th><th>Tipo</th><th>Presup.</th><th>Fecha</th><th></th></tr></thead><tbody>${S.gastos.slice().reverse().map((r,i)=>{
+    const pct=r.presup>0?Math.min(100,(r.monto/r.presup*100)):0;
+    const col=pct>100?'#c0392b':pct>80?'#854f0b':'#0f7a52';
+    return`<tr><td>${r.cat.substring(0,22)}</td><td>${r.desc||'—'}</td><td class="mono dn">${COP(r.monto)}</td><td><span class="tag ${r.tipo==='fijo'?'tag-blue':r.tipo==='hormiga'?'tag-amber':'tag-gray'}">${r.tipo}</span></td><td>${r.presup>0?`<div style="font-size:10px;color:var(--muted)">${COP(r.presup)}</div><div class="prog"><div class="prog-fill" style="width:${pct}%;background:${col}"></div></div>`:'—'}</td><td style="color:var(--muted)">${r.fecha}</td><td><button class="btn btn-danger btn-sm" onclick="del('gastos',${S.gastos.length-1-i})">✕</button></td></tr>`;}).join('')}</tbody></table>`;
+}
+function addMeta(){
+  const obj=parseFloat(document.getElementById('meta-obj').value);
+  if(!obj){toast('Define el monto objetivo',false);return;}
+  S.metas.push({id:Date.now(),nombre:document.getElementById('meta-nom').value||'Meta',objetivo:obj,actual:parseFloat(document.getElementById('meta-act').value)||0,mensual:parseFloat(document.getElementById('meta-men').value)||0,fecha:document.getElementById('meta-fecha').value,tipo:document.getElementById('meta-tipo').value});
+  save();renderMetas();renderDash();clr('meta');toast('Meta guardada');
+}
+function renderMetas(){
+  const tot=S.metas.reduce((a,m)=>a+(+m.actual||0),0);
+  const gf=S.gastos.filter(g=>g.tipo==='fijo').reduce((a,g)=>a+(+g.monto||0),0);
+  document.getElementById('ah-tot').textContent=COP(tot);
+  document.getElementById('ah-mes').textContent=gf>0?(tot/gf).toFixed(1)+'m':'—';
+  document.getElementById('ah-metas').textContent=S.metas.length;
+  const c=document.getElementById('tabla-meta');
+  if(!S.metas.length){c.innerHTML='<div class="empty"><div class="empty-icon">🏧</div>Sin metas</div>';return;}
+  c.innerHTML=`<table><thead><tr><th>Meta</th><th>Tipo</th><th>Ahorrado</th><th>Objetivo</th><th>Mensual</th><th>Progreso</th><th>Fecha</th><th></th></tr></thead><tbody>${S.metas.map((m,i)=>{const pct=Math.min(100,(m.actual/m.objetivo*100));const mr=m.mensual>0?Math.ceil((m.objetivo-m.actual)/m.mensual):null;return`<tr><td><b>${m.nombre}</b></td><td style="color:var(--muted)">${m.tipo}</td><td class="mono" style="color:var(--blue)">${COP(m.actual)}</td><td class="mono">${COP(m.objetivo)}</td><td class="mono up">${COP(m.mensual)}</td><td style="min-width:100px"><div style="font-size:10px;margin-bottom:3px;color:var(--muted)">${pct.toFixed(0)}%${mr?' · ~'+mr+'m':''}</div><div class="prog"><div class="prog-fill" style="width:${pct}%;background:${pct>=100?'#0f7a52':pct>=60?'#185fa5':'#eda100'}"></div></div></td><td style="color:var(--muted)">${m.fecha||'—'}</td><td><button class="btn btn-danger btn-sm" onclick="del('metas',${i})">✕</button></td></tr>`;}).join('')}</tbody></table>`;
+}
+function addRF(){
+  const m=parseFloat(document.getElementById('rf-monto').value);const t=parseFloat(document.getElementById('rf-tasa').value);
+  if(!m||isNaN(t)){toast('Completa monto y tasa',false);return;}
+  const com=parseFloat(document.getElementById('rf-com').value)||0;const tn=t-com;
+  S.rentaFija.push({id:Date.now(),tipo:document.getElementById('rf-tipo').value,canal:document.getElementById('rf-canal').value,monto:m,tasa:t,com,tasaNeta:tn,rendEsperado:m*tn/100,pago:document.getElementById('rf-pago').value,ini:document.getElementById('rf-ini').value,vence:document.getElementById('rf-vence').value,estado:document.getElementById('rf-estado').value,notas:document.getElementById('rf-notas').value,fecha:document.getElementById('rf-ini').value});
+  save();renderRF();renderDash();renderSeguimiento();clr('rf');toast('Renta fija guardada');
+}
+function renderRF(){
+  const tot=S.rentaFija.reduce((a,r)=>a+(+r.monto||0),0);
+  const rend=S.rentaFija.reduce((a,r)=>a+(+r.rendEsperado||0),0);
+  const tnP=tot>0?S.rentaFija.reduce((a,r)=>a+(r.tasaNeta*r.monto),0)/tot:0;
+  document.getElementById('rf-tot').textContent=COP(tot);document.getElementById('rf-rend').textContent=COP(rend);document.getElementById('rf-tasa-p').textContent=Pct(tnP);
+  const c=document.getElementById('tabla-rf');
+  if(!S.rentaFija.length){c.innerHTML='<div class="empty"><div class="empty-icon">🏦</div>Sin registros</div>';return;}
+  c.innerHTML=`<table><thead><tr><th>Producto</th><th>Canal</th><th>Monto</th><th>Tasa bruta</th><th>Tasa neta</th><th>Rend./año</th><th>Vence</th><th>Estado</th><th></th></tr></thead><tbody>${S.rentaFija.map((r,i)=>`<tr><td><b>${r.tipo}</b>${r.notas?`<br><span style="font-size:10px;color:var(--muted)">${r.notas}</span>`:''}</td><td style="color:var(--muted)">${r.canal}</td><td class="mono">${COP(r.monto)}</td><td class="mono up">${Pct(r.tasa)}</td><td class="mono" style="color:var(--blue)">${Pct(r.tasaNeta)}</td><td class="mono up">${COP(r.rendEsperado)}</td><td style="color:var(--muted)">${r.vence||'—'}</td><td><span class="tag ${r.estado==='activo'?'tag-green':r.estado==='vencido'?'tag-red':'tag-amber'}">${r.estado}</span></td><td><button class="btn btn-danger btn-sm" onclick="del('rentaFija',${i})">✕</button></td></tr>`).join('')}</tbody></table>`;
+}
+function addRV(){
+  const cant=parseFloat(document.getElementById('rv-cant').value);const pc=parseFloat(document.getElementById('rv-pcomp').value);
+  if(!cant||!pc){toast('Completa cantidad y precio',false);return;}
+  const pa=parseFloat(document.getElementById('rv-pact').value)||pc;
+  const costo=cant*pc;const va=cant*pa;
+  S.rentaVariable.push({id:Date.now(),tipo:document.getElementById('rv-tipo').value,ticker:document.getElementById('rv-ticker').value,canal:document.getElementById('rv-canal').value,cantidad:cant,precioCompra:pc,precioActual:pa,com:parseFloat(document.getElementById('rv-com').value)||0,costoTotal:costo,valorActual:va,ganancia:va-costo,retornoPct:((pa-pc)/pc*100),fecha:document.getElementById('rv-fecha').value,riesgo:document.getElementById('rv-riesgo').value,tesis:document.getElementById('rv-tesis').value});
+  save();renderRV();renderDash();renderSeguimiento();clr('rv');toast('Posición guardada');
+}
+function renderRV(){
+  const val=S.rentaVariable.reduce((a,r)=>a+(+r.valorActual||0),0);
+  const costo=S.rentaVariable.reduce((a,r)=>a+(+r.costoTotal||0),0);
+  const gp=val-costo;
+  document.getElementById('rv-val').textContent=COP(val);document.getElementById('rv-costo').textContent=COP(costo);
+  const gpEl=document.getElementById('rv-gp');gpEl.textContent=(gp>=0?'+':'')+COP(gp);gpEl.className='kpi-val sm '+(gp>=0?'up':'dn');
+  const c=document.getElementById('tabla-rv');
+  if(!S.rentaVariable.length){c.innerHTML='<div class="empty"><div class="empty-icon">📈</div>Sin posiciones</div>';return;}
+  c.innerHTML=`<table><thead><tr><th>Activo</th><th>Canal</th><th>Cant.</th><th>P.compra</th><th>P.actual</th><th>Costo total</th><th>Valor actual</th><th>G/P</th><th>Retorno</th><th></th></tr></thead><tbody>${S.rentaVariable.map((r,i)=>`<tr><td><b>${r.ticker||r.tipo}</b><br><span style="font-size:10px;color:var(--muted)">${r.tipo} · ${r.riesgo}</span></td><td style="color:var(--muted)">${r.canal}</td><td class="mono">${r.cantidad}</td><td class="mono">${COP(r.precioCompra)}</td><td class="mono">${COP(r.precioActual)}</td><td class="mono">${COP(r.costoTotal)}</td><td class="mono">${COP(r.valorActual)}</td><td class="mono ${r.ganancia>=0?'up':'dn'}">${r.ganancia>=0?'+':''}${COP(r.ganancia)}</td><td class="mono ${r.retornoPct>=0?'up':'dn'}">${r.retornoPct.toFixed(2)}%</td><td><button class="btn btn-danger btn-sm" onclick="del('rentaVariable',${i})">✕</button></td></tr>`).join('')}</tbody></table>`;
+}
+function addInmo(){
+  const comp=parseFloat(document.getElementById('inmo-compra').value);if(!comp){toast('Ingresa valor de compra',false);return;}
+  const act=parseFloat(document.getElementById('inmo-actual').value)||comp;
+  const canon=parseFloat(document.getElementById('inmo-canon').value)||0;
+  const tasa=parseFloat(document.getElementById('inmo-tasa').value)||0;
+  const com=parseFloat(document.getElementById('inmo-com').value)||0;
+  S.inmobiliario.push({id:Date.now(),tipo:document.getElementById('inmo-tipo').value,nombre:document.getElementById('inmo-nombre').value,canal:document.getElementById('inmo-canal').value,compra:comp,actual:act,canon,tasa,com,tasaNeta:tasa-com,valoracion:act-comp,rentaAnual:canon*12,fecha:document.getElementById('inmo-fecha').value,notas:document.getElementById('inmo-notas').value});
+  save();renderInmo();renderDash();renderSeguimiento();clr('inmo');toast('Activo inmobiliario guardado');
+}
+function renderInmo(){
+  const c=document.getElementById('tabla-inmo');
+  if(!S.inmobiliario.length){c.innerHTML='<div class="empty"><div class="empty-icon">🏢</div>Sin activos</div>';return;}
+  c.innerHTML=`<table><thead><tr><th>Activo</th><th>Canal</th><th>Compra</th><th>Actual</th><th>Valorización</th><th>Canon/mes</th><th>Renta anual</th><th>Tasa neta</th><th></th></tr></thead><tbody>${S.inmobiliario.map((r,i)=>`<tr><td><b>${r.nombre||r.tipo}</b>${r.notas?`<br><span style="font-size:10px;color:var(--muted)">${r.notas.substring(0,30)}</span>`:''}</td><td style="color:var(--muted)">${r.canal}</td><td class="mono">${COP(r.compra)}</td><td class="mono">${COP(r.actual)}</td><td class="mono ${r.valoracion>=0?'up':'dn'}">${r.valoracion>=0?'+':''}${COP(r.valoracion)}</td><td class="mono">${COP(r.canon)}</td><td class="mono up">${COP(r.rentaAnual)}</td><td class="mono" style="color:var(--blue)">${Pct(r.tasaNeta)}</td><td><button class="btn btn-danger btn-sm" onclick="del('inmobiliario',${i})">✕</button></td></tr>`).join('')}</tbody></table>`;
+}
+function addUSD(){
+  const cant=parseFloat(document.getElementById('usd-cant').value);if(!cant){toast('Ingresa cantidad USD',false);return;}
+  const trmC=parseFloat(document.getElementById('usd-trm').value)||S.trm;
+  const item={id:Date.now(),tipo:document.getElementById('usd-tipo').value,nombre:document.getElementById('usd-nombre').value,canal:document.getElementById('usd-canal').value,cantUSD:cant,trmCompra:trmC,rendUSD:parseFloat(document.getElementById('usd-rend').value)||0,fecha:document.getElementById('usd-fecha').value,notas:document.getElementById('usd-notas').value,copCompra:cant*trmC};
+  item.copActual=cant*S.trm;item.gpCambiaria=item.copActual-item.copCompra;
+  S.dolares.push(item);
+  save();renderUSD();renderDash();renderSeguimiento();clr('usd');toast('Posición USD guardada');
+}
+function renderUSD(){
+  S.dolares.forEach(d=>{d.copActual=d.cantUSD*S.trm;d.gpCambiaria=d.copActual-d.copCompra;});
+  const c=document.getElementById('tabla-usd');
+  if(!S.dolares.length){c.innerHTML='<div class="empty"><div class="empty-icon">💵</div>Sin posiciones</div>';return;}
+  c.innerHTML=`<table><thead><tr><th>Instrumento</th><th>Canal</th><th>USD</th><th>TRM compra</th><th>TRM actual</th><th>COP actual</th><th>G/P cambiaria</th><th>Rend. USD</th><th></th></tr></thead><tbody>${S.dolares.map((r,i)=>`<tr><td><b>${r.nombre||r.tipo}</b></td><td style="color:var(--muted)">${r.canal}</td><td class="mono">$${r.cantUSD.toLocaleString('en-US',{minimumFractionDigits:2})}</td><td class="mono">${r.trmCompra.toLocaleString('es-CO')}</td><td class="mono">${S.trm.toLocaleString('es-CO')}</td><td class="mono">${COP(r.copActual)}</td><td class="mono ${r.gpCambiaria>=0?'up':'dn'}">${r.gpCambiaria>=0?'+':''}${COP(r.gpCambiaria)}</td><td class="mono up">${Pct(r.rendUSD)}</td><td><button class="btn btn-danger btn-sm" onclick="del('dolares',${i})">✕</button></td></tr>`).join('')}</tbody></table>`;
+}
+function addDeu(){
+  const saldo=parseFloat(document.getElementById('deu-saldo').value);if(!saldo){toast('Ingresa el saldo',false);return;}
+  const cuota=parseFloat(document.getElementById('deu-cuota').value)||0;const cuotas=parseInt(document.getElementById('deu-cuotas').value)||0;
+  S.deudas.push({id:Date.now(),tipo:document.getElementById('deu-tipo').value,entidad:document.getElementById('deu-entidad').value,saldo,cuota,cuotas,tasa:parseFloat(document.getElementById('deu-tasa').value)||0,fecha:document.getElementById('deu-fecha').value,prior:document.getElementById('deu-prior').value,totalPagar:cuota*cuotas,intTotal:Math.max(0,cuota*cuotas-saldo)});
+  S.deudas.sort((a,b)=>b.tasa-a.tasa);
+  save();renderDeu();renderDash();clr('deu');toast('Deuda registrada');
+}
+function renderDeu(){
+  const tot=S.deudas.reduce((a,d)=>a+(+d.saldo||0),0);
+  const cuot=S.deudas.reduce((a,d)=>a+(+d.cuota||0),0);
+  const intT=S.deudas.reduce((a,d)=>a+(+d.intTotal||0),0);
+  document.getElementById('deu-tot').textContent=COP(tot);document.getElementById('deu-cuot').textContent=COP(cuot);document.getElementById('deu-int').textContent=COP(intT);
+  const c=document.getElementById('tabla-deu');
+  if(!S.deudas.length){c.innerHTML='<div class="empty"><div class="empty-icon">💳</div>Sin deudas</div>';return;}
+  c.innerHTML=`<table><thead><tr><th>#</th><th>Tipo</th><th>Entidad</th><th>Saldo</th><th>Cuota/mes</th><th>Tasa E.A.</th><th>Cuotas</th><th>Interés total</th><th>Próx. pago</th><th></th></tr></thead><tbody>${S.deudas.map((r,i)=>`<tr><td class="mono" style="color:var(--muted)">${i+1}</td><td><b>${r.tipo}</b></td><td>${r.entidad||'—'}</td><td class="mono dn">${COP(r.saldo)}</td><td class="mono">${COP(r.cuota)}</td><td class="mono dn">${Pct(r.tasa)}</td><td class="mono">${r.cuotas}</td><td class="mono dn">${COP(r.intTotal)}</td><td style="color:var(--muted)">${r.fecha||'—'}</td><td><button class="btn btn-danger btn-sm" onclick="del('deudas',${i})">✕</button></td></tr>`).join('')}</tbody></table>`;
+}
+function del(cat,idx){S[cat].splice(idx,1);save();if(cat==='ingresos')renderIngresos();else if(cat==='gastos')renderGastos();else if(cat==='metas')renderMetas();else if(cat==='rentaFija')renderRF();else if(cat==='rentaVariable')renderRV();else if(cat==='inmobiliario')renderInmo();else if(cat==='dolares')renderUSD();else if(cat==='deudas')renderDeu();renderDash();renderSeguimiento();toast('Eliminado');}
+function simular(){
+  const P0=parseFloat(document.getElementById('sim-m').value)||0;
+  const t=(parseFloat(document.getElementById('sim-t').value)||0-parseFloat(document.getElementById('sim-c').value)||0)/100;
+  const años=parseInt(document.getElementById('sim-a').value)||1;
+  const aporteM=parseFloat(document.getElementById('sim-ap').value)||0;
+  const tasMes=Math.pow(1+t,1/12)-1;
+  let saldo=P0,totalAp=P0,rows='';
+  for(let a=1;a<=años;a++){for(let m=0;m<12;m++){saldo=saldo*(1+tasMes)+aporteM;totalAp+=aporteM;}
+    rows+=`<tr><td>Año ${a}</td><td class="mono t-right">${COP(totalAp)}</td><td class="mono t-right up">${COP(saldo-totalAp)}</td><td class="mono t-right" style="color:var(--blue)">${COP(saldo)}</td><td class="mono t-right up">${totalAp>0?((saldo/totalAp-1)*100).toFixed(2):0}%</td></tr>`;}
+  document.getElementById('sim-final').textContent=COP(saldo);
+  document.getElementById('sim-gan').textContent=COP(saldo-totalAp);
+  document.getElementById('sim-tn').textContent=Pct((parseFloat(document.getElementById('sim-t').value)||0)-(parseFloat(document.getElementById('sim-c').value)||0));
+  document.getElementById('sim-tabla').innerHTML=`<table><thead><tr><th>Año</th><th class="t-right">Total invertido</th><th class="t-right">Rendimiento</th><th class="t-right">Capital</th><th class="t-right">Retorno</th></tr></thead><tbody>${rows}</tbody></table>`;
+  document.getElementById('sim-out').style.display='block';
+}
+
+/* ── ALERTS ── */
+function openAlerts(){computeAlerts();document.getElementById('alertsOverlay').classList.add('open');}
+function closeAlerts(e){if(!e||e.target===document.getElementById('alertsOverlay'))document.getElementById('alertsOverlay').classList.remove('open');}
+function computeAlerts(){
+  const alerts=[];const hm=new Date();
+  const totalIng=S.ingresos.reduce((a,i)=>a+(+i.monto||0),0);
+  const totalGas=S.gastos.reduce((a,g)=>a+(+g.monto||0),0);
+  const ahorroTot=S.metas.reduce((a,m)=>a+(+m.actual||0),0);
+  const gastoFijo=S.gastos.filter(g=>g.tipo==='fijo').reduce((a,g)=>a+(+g.monto||0),0);
+  const {total:totPort}=tp();
+  const totalDeu=S.deudas.reduce((a,d)=>a+(+d.saldo||0),0);
+
+  if(totalIng>0&&totalGas/totalIng>0.8)alerts.push({t:'critical',title:'Gastos críticos',msg:`Gastos al ${(totalGas/totalIng*100).toFixed(1)}% del ingreso. Regla 50/30/20 recomienda máximo 80%.`});
+  else if(totalIng>0&&totalGas/totalIng>0.6)alerts.push({t:'warning',title:'Gastos elevados',msg:`Gastos al ${(totalGas/totalIng*100).toFixed(1)}% del ingreso.`});
+
+  if(gastoFijo>0&&ahorroTot<gastoFijo*3)alerts.push({t:'warning',title:'Fondo emergencia insuficiente',msg:`Tienes ${(ahorroTot/gastoFijo).toFixed(1)} meses cubiertos. Se recomiendan 3–6 meses.`});
+
+  S.rentaFija.forEach(rf=>{
+    if(!rf.vence)return;
+    const dv=new Date(rf.vence);const diff=Math.ceil((dv-hm)/(1000*60*60*24));
+    if(diff>=0&&diff<=30)alerts.push({t:'warning',title:`CDT vence en ${diff} días`,msg:`${rf.tipo} — ${COP(rf.monto)} vence el ${rf.vence}.`});
+    if(diff<0&&rf.estado==='activo')alerts.push({t:'critical',title:'CDT vencido sin actualizar',msg:`${rf.tipo} venció el ${rf.vence}. Actualiza su estado.`});
+  });
+
+  S.deudas.forEach(d=>{
+    if(!d.fecha)return;
+    const dp=new Date(d.fecha);const diff=Math.ceil((dp-hm)/(1000*60*60*24));
+    if(diff>=0&&diff<=7)alerts.push({t:'warning',title:`Pago en ${diff} días`,msg:`${d.entidad||d.tipo} — cuota ${COP(d.cuota)} vence el ${d.fecha}.`});
+  });
+
+  if(totPort>0&&totalDeu/totPort>0.5)alerts.push({t:'critical',title:'Alto endeudamiento',msg:`Ratio deuda/activos: ${(totalDeu/totPort*100).toFixed(0)}%. Recomendado: < 40%.`});
+  if(totPort>0){const{rf}=tp();if(rf/totPort>0.85)alerts.push({t:'info',title:'Portafolio concentrado en RF',msg:`${(rf/totPort*100).toFixed(0)}% en renta fija. Considera diversificar.`});}
+  if(totPort===0&&totalIng>0)alerts.push({t:'info',title:'Sin inversiones activas',msg:`Tienes ingresos pero no hay portafolio registrado. Comienza con un CDT o FIC.`});
+
+  // Seguimiento: inversiones sin movimientos en +60 días
+  const all=[...S.rentaFija.map((r,i)=>({id:`rf-${i}`,name:r.tipo,fecha:r.fecha})),...S.rentaVariable.map((r,i)=>({id:`rv-${i}`,name:r.ticker||r.tipo,fecha:r.fecha}))];
+  all.forEach(inv=>{
+    const movs=S.movimientos.filter(m=>m.invId===inv.id);
+    const lastMov=movs.length?new Date(movs.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha))[0].fecha):inv.fecha?new Date(inv.fecha):null;
+    if(lastMov){const days=Math.ceil((hm-lastMov)/(1000*60*60*24));if(days>60)alerts.push({t:'info',title:`Sin actualizar: ${inv.name}`,msg:`Lleva ${days} días sin registrar un movimiento o actualización de precio.`});}
+  });
+
+  if(!alerts.length)alerts.push({t:'ok',title:'Todo en orden',msg:'No hay alertas activas. Continúa con tus buenos hábitos financieros.'});
+
+  const colors={'critical':'var(--red)','warning':'var(--amber)','info':'var(--blue)','ok':'var(--green)'};
+  document.getElementById('alertsBody').innerHTML=alerts.map(a=>`<div style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:8px;border-left:3px solid ${colors[a.t]}"><div style="font-size:12px;font-weight:500;margin-bottom:3px">${a.title}</div><div style="font-size:11.5px;color:var(--muted);line-height:1.5">${a.msg}</div></div>`).join('');
+  const crits=alerts.filter(a=>a.t==='critical'||a.t==='warning').length;
+  document.getElementById('bell-btn').innerHTML=crits>0?`<i class="ti ti-bell" aria-hidden="true"></i> <span style="font-size:10px;font-weight:500;color:var(--red)">${crits}</span>`:'<i class="ti ti-bell" aria-hidden="true"></i>';
+  return alerts;
+}
+
+/* ── DASHBOARD ── */
+function renderDash(){
+  const totalIng=S.ingresos.reduce((a,i)=>a+(+i.monto||0),0);
+  const totalGas=S.gastos.reduce((a,g)=>a+(+g.monto||0),0);
+  const ahorroM=S.metas.reduce((a,m)=>a+(+m.mensual||0),0);
+  const{rf,rv,inmo,usd,total:totP}=tp();
+  const totalDeu=S.deudas.reduce((a,d)=>a+(+d.saldo||0),0);
+  const rendTot=S.rentaFija.reduce((a,r)=>a+(+r.rendEsperado||0),0)+S.inmobiliario.reduce((a,r)=>a+(+r.rentaAnual||0),0)+S.rentaVariable.reduce((a,r)=>a+(+r.ganancia||0),0);
+
+  // Flujo
+  document.getElementById('f-ing').textContent=COP(totalIng);
+  document.getElementById('f-gas').textContent=COP(totalGas);
+  document.getElementById('f-aho').textContent=COP(ahorroM);
+  document.getElementById('f-inv').textContent=COP(totP);
+  if(totalIng>0){
+    document.getElementById('f-gas-p').textContent=(totalGas/totalIng*100).toFixed(1)+'% ingreso';
+    document.getElementById('f-aho-p').textContent=(ahorroM/totalIng*100).toFixed(1)+'% ingreso';
+    document.getElementById('f-inv-p').textContent='portafolio acumulado';
+  }
+  // Flujo alert
+  const fa=document.getElementById('flujo-alert');fa.innerHTML='';
+  if(totalIng>0){const pG=totalGas/totalIng*100;if(pG>80)fa.innerHTML=`<div class="alert alert-danger">Gastos en zona crítica (${pG.toFixed(1)}%). Reduce gastos variables urgentemente.</div>`;else if(pG>60)fa.innerHTML=`<div class="alert alert-warn">Gastos al ${pG.toFixed(1)}% del ingreso — Sigue la regla 50/30/20.</div>`;else if(totalIng>0)fa.innerHTML=`<div class="alert alert-ok">Gastos saludables (${pG.toFixed(1)}%) — continúa con este control.</div>`;}
+
+  // KPIs
+  const neto=totP-totalDeu;
+  document.getElementById('kpi-neto').textContent=COP(neto);document.getElementById('kpi-neto-tag').className='kpi-delta '+(neto>=0?'up':'dn');document.getElementById('kpi-neto-tag').textContent=neto>=0?'Activos > Pasivos':'Pasivos > Activos';
+  document.getElementById('kpi-port').textContent=COP(totP);document.getElementById('kpi-rend').textContent=COP(rendTot);document.getElementById('kpi-deu').textContent=COP(totalDeu);
+  document.getElementById('kpi-deu-r').textContent=`Ratio: ${totP>0?(totalDeu/totP*100).toFixed(1):0}%`;
+
+  // Donut
+  const C=251;
+  if(totP>0){let off=0;[[rf,'dr-rf'],[rv,'dr-rv'],[inmo,'dr-inmo'],[usd,'dr-usd']].forEach(([v,id])=>{const dash=(v/totP)*C;const el=document.getElementById(id);el.setAttribute('stroke-dasharray',`${dash} ${C}`);el.setAttribute('stroke-dashoffset',-off);off+=dash;});
+  document.getElementById('dr-n').textContent=[[rf],[rv],[inmo],[usd]].filter(([v])=>v>0).length;
+  ['dl-rf','dl-rv','dl-inmo','dl-usd'].forEach((id,i)=>{const vals=[rf,rv,inmo,usd];document.getElementById(id).textContent=(vals[i]/totP*100).toFixed(1)+'%';});}
+
+  // Gastos por cat
+  const gcp=document.getElementById('dash-gastos-cat');
+  if(!S.gastos.length){gcp.innerHTML='<div class="empty"><div class="empty-icon">🧾</div>Sin gastos</div>';}
+  else{const cats={};S.gastos.forEach(g=>{const k=g.cat.replace(/^[^\w]+/,'').substring(0,18);cats[k]=(cats[k]||0)+(+g.monto);});const tot=Object.values(cats).reduce((a,v)=>a+v,0);gcp.innerHTML=Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>`<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:3px"><span style="color:var(--muted)">${k}</span><span class="mono">${COP(v)}</span></div><div class="prog"><div class="prog-fill" style="width:${(v/tot*100).toFixed(0)}%;background:#eda100"></div></div></div>`).join('');}
+
+  // Recent
+  const all=[...S.ingresos.map(r=>({cat:'Ingreso',name:r.cat.split('/')[0].trim(),monto:r.monto,sign:1,fecha:r.fecha,color:'#0f7a52'})),...S.gastos.map(r=>({cat:'Gasto',name:r.cat.replace(/^[^\w]+/,'').substring(0,20),monto:r.monto,sign:-1,fecha:r.fecha,color:'#c0392b'})),...S.rentaFija.map(r=>({cat:'RF',name:r.tipo,monto:r.monto,sign:1,fecha:r.ini,color:'#185fa5'})),...S.rentaVariable.map(r=>({cat:'RV',name:r.ticker||r.tipo,monto:r.costoTotal,sign:1,fecha:r.fecha,color:'#1baf7a'})),...S.inmobiliario.map(r=>({cat:'Inmo',name:r.nombre||r.tipo,monto:r.compra,sign:1,fecha:r.fecha,color:'#eda100'})),...S.deudas.map(r=>({cat:'Deuda',name:r.tipo,monto:r.saldo,sign:-1,fecha:r.fecha,color:'#c0392b'}))].sort((a,b)=>new Date(b.fecha||'2000-01-01')-new Date(a.fecha||'2000-01-01')).slice(0,10);
+  const rc=document.getElementById('dash-recent');
+  if(!all.length){rc.innerHTML='<div class="empty"><div class="empty-icon">📭</div>Sin operaciones aún</div>';return;}
+  rc.innerHTML=`<table><thead><tr><th>Tipo</th><th>Descripción</th><th>Monto</th><th>Fecha</th></tr></thead><tbody>${all.map(r=>`<tr><td><span class="tag" style="background:${r.color}22;color:${r.color}">${r.cat}</span></td><td>${r.name}</td><td class="mono ${r.sign>0?'up':'dn'}">${r.sign>0?'+':'−'}${COP(r.monto)}</td><td style="color:var(--muted)">${r.fecha||'—'}</td></tr>`).join('')}</tbody></table>`;
+
+  computeAlerts();
+}
+
+function exportData(){const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='fintrack-co-v3-'+hoy()+'.json';a.click();toast('Datos exportados');}
+
+/* ── INIT ── */
+load();
+document.getElementById('dash-fecha').textContent=new Date().toLocaleDateString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+['ing-fecha','gasto-fecha','rf-ini','rv-fecha','inmo-fecha','usd-fecha','deu-fecha','meta-fecha'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=hoy();});
+renderDash();renderIngresos();renderGastos();renderMetas();renderRF();renderRV();renderInmo();renderUSD();renderDeu();renderSeguimiento();
+fetchMarketData();
+</script>
