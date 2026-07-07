@@ -1,0 +1,22 @@
+# Backups y datos locales
+*.backup.json
+fintrack-backup-*.json
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node (si se usa servidor local)
+node_modules/
+npm-debug.log
+
+# Python
+__pycache__/
+*.pyc
