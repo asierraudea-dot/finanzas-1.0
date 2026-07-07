@@ -165,6 +165,27 @@ else:  # Recomendaciones IA
 st.sidebar.caption("Finanzas Fáciles v2.0 © 2026")
 st.caption("Herramienta educativa para finanzas personales en Colombia y LATAM. Datos locales en esta sesión.")
 
+# ====================== MÓDULOS ======================
+
+if page == "📊 Dashboard General":
+    # ... (mantén tu código actual de este módulo)
+
+elif page == "📋 Registro y Presupuesto":
+    # ... (mantén tu código actual)
+
+elif page == "📈 Seguimiento Mensual":
+    # ... (mantén tu código actual)
+
+elif page == "🎯 Metas Financieras":
+    # ... (mantén tu código actual)
+
+elif page == "💳 Deudas y Créditos":
+    # ... (mantén tu código actual)
+
+elif page == "💡 Recomendaciones IA":
+    # ... (mantén tu código actual)
+
+# ==================== NUEVO MÓDULO ====================
 elif page == "📊 Simulador de Portafolio":
     st.title("📊 Simulador de Portafolio y Proyecciones")
     
@@ -179,7 +200,6 @@ elif page == "📊 Simulador de Portafolio":
     
     st.metric("Ahorro Neto Mensual para Invertir", f"${ahorro_neto:,.0f}")
     
-    # Distribución
     st.subheader("Distribución de Inversión")
     rf = st.slider("Renta Fija (%)", 0, 100, 50)
     rv_col = st.slider("Renta Variable Colombia (%)", 0, 100, 30)
@@ -189,11 +209,11 @@ elif page == "📊 Simulador de Portafolio":
     meses = st.slider("Meses a proyectar", 6, 60, 12)
     
     # Simulación
-    capital = 0
+    capital = 0.0
     data = []
-    for mes in range(1, meses+1):
+    for mes in range(1, meses + 1):
         capital += ahorro_neto
-        rendimiento = (capital * 0.12 / 12)  # 12% EA promedio
+        rendimiento = (capital * 0.12 / 12)   # 12% EA promedio
         capital += rendimiento
         data.append({
             'Mes': mes,
