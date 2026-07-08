@@ -760,27 +760,689 @@ cargar();
 
 @app.route("/ingresos")
 @login_required
-def ingresos(): return generic_page("Ingresos", "ingresos")
+def ingresos():
+    c = """<div class="page">
+  <div class="topbar">
+    <div><div class="page-title">Ingresos</div><div class="page-sub">Salario, freelance, arriendos, dividendos…</div></div>
+    <div><button class="btn btn-primary btn-sm" onclick="resetIng();openModal('modal-ing')">+ Nuevo ingreso</button></div>
+  </div>
+  <div class="kpi-grid g3">
+    <div class="kpi"><div class="kpi-label">Total ingresos</div><div class="kpi-val up" id="ing-tot">$0</div></div>
+    <div class="kpi"><div class="kpi-label">Ingreso mensual</div><div class="kpi-val" id="ing-men">$0</div></div>
+    <div class="kpi"><div class="kpi-label">Registros</div><div class="kpi-val" id="ing-cnt">0</div></div>
+  </div>
+  <div class="card"><div class="card-header"><div class="card-title">Mis ingresos</div></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Categoría</th><th>Descripción</th><th class="t-right">Monto</th><th>Período</th><th>Fecha</th><th>Notas</th><th>Acciones</th></tr></thead>
+      <tbody id="tabla-ing"><tr><td colspan="7"><div class="empty">Cargando…</div></td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+<div id="modal-ing" class="modal-overlay" onclick="if(event.target===this){resetIng();closeModal('modal-ing')}">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header"><div class="modal-title" id="ing-title">Nuevo ingreso</div>
+      <button class="btn btn-sm" onclick="resetIng();closeModal('modal-ing')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="ing-id"/>
+      <div class="form-grid g2f">
+        <div class="form-group"><label>Categoría</label><select id="ing-cat">
+          <option>Salario / Nómina</option><option>Freelance / Honorarios</option>
+          <option>Arriendo recibido</option><option>Dividendos</option>
+          <option>Pensión / Jubilación</option><option>Transferencia familiar</option>
+          <option>Venta activo</option><option>Otro</option>
+        </select></div>
+        <div class="form-group"><label>Período</label><select id="ing-period">
+          <option value="mensual">Mensual</option><option value="quincenal">Quincenal</option>
+          <option value="semanal">Semanal</option><option value="anual">Anual</option>
+          <option value="único">Único / Esporádico</option>
+        </select></div>
+        <div class="form-group full"><label>Descripción</label>
+          <input type="text" id="ing-desc" placeholder="Salario empresa XYZ, proyecto freelance…"/></div>
+        <div class="form-group"><label>Monto ($)</label>
+          <input type="number" id="ing-monto" placeholder="3500000"/></div>
+        <div class="form-group"><label>Fecha</label><input type="date" id="ing-fecha"/></div>
+        <div class="form-group full"><label>Notas</label>
+          <input type="text" id="ing-notas" placeholder="Observaciones adicionales…"/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="resetIng();closeModal('modal-ing')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarIng()">Guardar</button>
+    </div>
+  </div>
+</div>
+<script>
+function resetIng(){['ing-cat','ing-period'].forEach(function(id){var el=document.getElementById(id);if(el)el.selectedIndex=0;});['ing-desc','ing-monto','ing-fecha','ing-notas','ing-id'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});document.getElementById('ing-fecha').value=hoy();document.getElementById('ing-title').textContent='Nuevo ingreso';}
+async function cargarIng(){
+  var rows=await api('/api/ingresos');
+  var t=document.getElementById('tabla-ing');
+  var tot=0,men=0;
+  if(!rows.length){t.innerHTML='<tr><td colspan="7"><div class="empty">Sin ingresos registrados</div></td></tr>';document.getElementById('ing-tot').textContent='$0';document.getElementById('ing-men').textContent='$0';document.getElementById('ing-cnt').textContent='0';return;}
+  rows.forEach(function(r){tot+=r.monto||0;if(r.period==='mensual')men+=r.monto||0;});
+  document.getElementById('ing-tot').textContent=COP(tot);
+  document.getElementById('ing-men').textContent=COP(men);
+  document.getElementById('ing-cnt').textContent=rows.length;
+  t.innerHTML=rows.map(function(r){return'<tr><td><span class="tag tag-green">'+r.cat+'</span></td><td>'+r.desc+'</td><td class="mono t-right up">'+COP(r.monto)+'</td><td style="color:var(--muted)">'+r.period+'</td><td style="color:var(--muted)">'+fmtFecha(r.fecha)+'</td><td style="color:var(--muted);font-size:11.5px">'+(r.notas||'')+'</td><td><div style="display:flex;gap:4px"><button class="btn btn-edit btn-xs" onclick="editarIng('+r.id+')">✏️</button><button class="btn btn-danger btn-xs" onclick="elimIng('+r.id+')">🗑</button></div></td></tr>';}).join('');
+}
+async function editarIng(id){var r=await api('/api/ingresos/'+id);document.getElementById('ing-id').value=id;document.getElementById('ing-cat').value=r.cat||'';document.getElementById('ing-period').value=r.period||'mensual';document.getElementById('ing-desc').value=r.desc||'';document.getElementById('ing-monto').value=r.monto||'';document.getElementById('ing-fecha').value=r.fecha||'';document.getElementById('ing-notas').value=r.notas||'';document.getElementById('ing-title').textContent='Editar ingreso';openModal('modal-ing');}
+async function guardarIng(){var id=document.getElementById('ing-id').value;var d={cat:document.getElementById('ing-cat').value,period:document.getElementById('ing-period').value,desc:document.getElementById('ing-desc').value,monto:parseFloat(document.getElementById('ing-monto').value)||0,fecha:document.getElementById('ing-fecha').value,notas:document.getElementById('ing-notas').value};if(!d.monto){toast('Ingresa el monto',false);return;}var r=id?await api('/api/ingresos/'+id,'PUT',d):await api('/api/ingresos','POST',d);if(r.ok||r.id){toast('Guardado ✅');resetIng();closeModal('modal-ing');cargarIng();}else toast('Error',false);}
+async function elimIng(id){if(!confirm('¿Eliminar?'))return;await api('/api/ingresos/'+id,'DELETE');toast('Eliminado');cargarIng();}
+resetIng();cargarIng();
+</script>"""
+    return base_html(c, session["user_name"], "ingresos")
 
 @app.route("/gastos")
 @login_required
-def gastos(): return generic_page("Gastos", "gastos")
+def gastos():
+    c = """<div class="page">
+  <div class="topbar">
+    <div><div class="page-title">Gastos</div><div class="page-sub">Fijos y variables — control de presupuesto</div></div>
+    <div><button class="btn btn-primary btn-sm" onclick="resetGas();openModal('modal-gas')">+ Nuevo gasto</button></div>
+  </div>
+  <div class="kpi-grid g3">
+    <div class="kpi"><div class="kpi-label">Total gastos</div><div class="kpi-val dn" id="gas-tot">$0</div></div>
+    <div class="kpi"><div class="kpi-label">Gastos fijos</div><div class="kpi-val dn" id="gas-fijo">$0</div></div>
+    <div class="kpi"><div class="kpi-label">Gastos variables</div><div class="kpi-val" id="gas-var">$0</div></div>
+  </div>
+  <div class="card"><div class="card-header"><div class="card-title">Mis gastos</div></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Categoría</th><th>Descripción</th><th class="t-right">Monto</th><th>Tipo</th><th class="t-right">Presupuesto</th><th>Fecha</th><th>Acciones</th></tr></thead>
+      <tbody id="tabla-gas"><tr><td colspan="7"><div class="empty">Cargando…</div></td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+<div id="modal-gas" class="modal-overlay" onclick="if(event.target===this){resetGas();closeModal('modal-gas')}">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header"><div class="modal-title" id="gas-title">Nuevo gasto</div>
+      <button class="btn btn-sm" onclick="resetGas();closeModal('modal-gas')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="gas-id"/>
+      <div class="form-grid g2f">
+        <div class="form-group"><label>Categoría</label><select id="gas-cat">
+          <option>Vivienda / Arriendo</option><option>Alimentación</option>
+          <option>Transporte</option><option>Salud</option><option>Educación</option>
+          <option>Entretenimiento</option><option>Ropa</option><option>Servicios (luz/agua/internet)</option>
+          <option>Seguros</option><option>Deudas / Cuotas</option><option>Otro</option>
+        </select></div>
+        <div class="form-group"><label>Tipo</label><select id="gas-tipo">
+          <option value="fijo">Fijo (mensual recurrente)</option>
+          <option value="variable">Variable</option>
+        </select></div>
+        <div class="form-group full"><label>Descripción</label>
+          <input type="text" id="gas-desc" placeholder="Netflix, mercado semanal, gasolina…"/></div>
+        <div class="form-group"><label>Monto ($)</label>
+          <input type="number" id="gas-monto" placeholder="150000"/></div>
+        <div class="form-group"><label>Presupuesto ($)</label>
+          <input type="number" id="gas-presup" placeholder="200000"/></div>
+        <div class="form-group"><label>Fecha</label><input type="date" id="gas-fecha"/></div>
+        <div class="form-group full"><label>Notas</label>
+          <input type="text" id="gas-notas" placeholder=""/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="resetGas();closeModal('modal-gas')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarGas()">Guardar</button>
+    </div>
+  </div>
+</div>
+<script>
+function resetGas(){['gas-cat','gas-tipo'].forEach(function(id){var el=document.getElementById(id);if(el)el.selectedIndex=0;});['gas-desc','gas-monto','gas-presup','gas-fecha','gas-notas','gas-id'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});document.getElementById('gas-fecha').value=hoy();document.getElementById('gas-title').textContent='Nuevo gasto';}
+async function cargarGas(){
+  var rows=await api('/api/gastos');
+  var t=document.getElementById('tabla-gas');
+  var tot=0,fijo=0,vari=0;
+  if(!rows.length){t.innerHTML='<tr><td colspan="7"><div class="empty">Sin gastos registrados</div></td></tr>';['gas-tot','gas-fijo','gas-var'].forEach(function(id){document.getElementById(id).textContent='$0';});return;}
+  rows.forEach(function(r){tot+=r.monto||0;if(r.tipo==='fijo')fijo+=r.monto||0;else vari+=r.monto||0;});
+  document.getElementById('gas-tot').textContent=COP(tot);
+  document.getElementById('gas-fijo').textContent=COP(fijo);
+  document.getElementById('gas-var').textContent=COP(vari);
+  t.innerHTML=rows.map(function(r){
+    var pct=r.presup>0?Math.min(100,r.monto/r.presup*100):0;
+    var cls=pct>100?'tag-red':pct>80?'tag-amber':'tag-green';
+    return'<tr><td><span class="tag tag-gray">'+r.cat+'</span></td><td>'+r.desc+'</td>'
+      +'<td class="mono t-right dn">'+COP(r.monto)+'</td>'
+      +'<td><span class="tag '+(r.tipo==='fijo'?'tag-blue':'tag-gray')+'">'+r.tipo+'</span></td>'
+      +'<td class="t-right">'+(r.presup>0?'<span class="tag '+cls+'">'+pct.toFixed(0)+'% de '+COP(r.presup)+'</span>':'—')+'</td>'
+      +'<td style="color:var(--muted)">'+fmtFecha(r.fecha)+'</td>'
+      +'<td><div style="display:flex;gap:4px"><button class="btn btn-edit btn-xs" onclick="editarGas('+r.id+')">✏️</button><button class="btn btn-danger btn-xs" onclick="elimGas('+r.id+')">🗑</button></div></td></tr>';
+  }).join('');
+}
+async function editarGas(id){var r=await api('/api/gastos/'+id);document.getElementById('gas-id').value=id;document.getElementById('gas-cat').value=r.cat||'';document.getElementById('gas-tipo').value=r.tipo||'variable';document.getElementById('gas-desc').value=r.desc||'';document.getElementById('gas-monto').value=r.monto||'';document.getElementById('gas-presup').value=r.presup||'';document.getElementById('gas-fecha').value=r.fecha||'';document.getElementById('gas-notas').value=r.notas||'';document.getElementById('gas-title').textContent='Editar gasto';openModal('modal-gas');}
+async function guardarGas(){var id=document.getElementById('gas-id').value;var d={cat:document.getElementById('gas-cat').value,tipo:document.getElementById('gas-tipo').value,desc:document.getElementById('gas-desc').value,monto:parseFloat(document.getElementById('gas-monto').value)||0,presup:parseFloat(document.getElementById('gas-presup').value)||0,fecha:document.getElementById('gas-fecha').value,notas:document.getElementById('gas-notas').value};if(!d.monto){toast('Ingresa el monto',false);return;}var r=id?await api('/api/gastos/'+id,'PUT',d):await api('/api/gastos','POST',d);if(r.ok||r.id){toast('Guardado ✅');resetGas();closeModal('modal-gas');cargarGas();}else toast('Error',false);}
+async function elimGas(id){if(!confirm('¿Eliminar?'))return;await api('/api/gastos/'+id,'DELETE');toast('Eliminado');cargarGas();}
+resetGas();cargarGas();
+</script>"""
+    return base_html(c, session["user_name"], "gastos")
 
 @app.route("/seguimiento")
 @login_required
-def seguimiento(): return generic_page("Seguimiento", "seguimiento")
+def seguimiento():
+    c = """<div class="page">
+  <div class="topbar">
+    <div><div class="page-title">Seguimiento</div><div class="page-sub">Historial de movimientos por inversión</div></div>
+  </div>
+  <div class="kpi-grid g3">
+    <div class="kpi"><div class="kpi-label">Total movimientos</div><div class="kpi-val" id="seg-cnt">0</div></div>
+    <div class="kpi"><div class="kpi-label">Total aportes</div><div class="kpi-val up" id="seg-ap">$0</div></div>
+    <div class="kpi"><div class="kpi-label">Total retiros</div><div class="kpi-val dn" id="seg-ret">$0</div></div>
+  </div>
+  <div class="card"><div class="card-header"><div class="card-title">Historial de movimientos</div></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Fecha</th><th>Categoría</th><th>Tipo</th><th class="t-right">Monto</th><th class="t-right">Precio</th><th>Contexto</th><th>Acciones</th></tr></thead>
+      <tbody id="tabla-seg"><tr><td colspan="7"><div class="empty">Cargando…</div></td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+<script>
+async function cargarSeg(){
+  var rows=await api('/api/movimientos');
+  var t=document.getElementById('tabla-seg');
+  var cnt=0,ap=0,ret=0;
+  if(!rows.length){t.innerHTML='<tr><td colspan="7"><div class="empty">Sin movimientos registrados</div></td></tr>';return;}
+  rows.forEach(function(r){cnt++;if(r.tipo==='aporte'||r.tipo==='deposito_meta')ap+=r.monto||0;if(r.tipo==='retiro'||r.tipo==='retiro_meta')ret+=r.monto||0;});
+  document.getElementById('seg-cnt').textContent=cnt;
+  document.getElementById('seg-ap').textContent=COP(ap);
+  document.getElementById('seg-ret').textContent=COP(ret);
+  t.innerHTML=rows.map(function(r){
+    var tipoClss={'aporte':'tag-green','retiro':'tag-red','actualizacion':'tag-blue','pago_cuota':'tag-amber','abono_capital':'tag-green','deposito_meta':'tag-green','retiro_meta':'tag-red'}[r.tipo]||'tag-gray';
+    return'<tr><td style="color:var(--muted)">'+fmtFecha(r.fecha)+'</td>'
+      +'<td><span class="tag tag-gray">'+(r.cat||'—')+'</span></td>'
+      +'<td><span class="tag '+tipoClss+'">'+(r.tipo||'—')+'</span></td>'
+      +'<td class="mono t-right">'+COP(r.monto)+'</td>'
+      +'<td class="mono t-right">'+(r.precio?COP(r.precio):'—')+'</td>'
+      +'<td style="color:var(--muted);font-size:11.5px">'+(r.ctx||'')+'</td>'
+      +'<td><button class="btn btn-danger btn-xs" onclick="elimSeg('+r.id+')">🗑</button></td></tr>';
+  }).join('');
+}
+async function elimSeg(id){if(!confirm('¿Eliminar movimiento?'))return;await api('/api/movimientos/'+id,'DELETE');toast('Eliminado');cargarSeg();}
+cargarSeg();
+</script>"""
+    return base_html(c, session["user_name"], "seguimiento")
 
 @app.route("/renta_variable")
 @login_required
-def renta_variable(): return generic_page("Renta Variable", "renta_variable")
+def renta_variable():
+    c = """<div class="page">
+  <div class="topbar">
+    <div><div class="page-title">Renta Variable</div><div class="page-sub">Acciones · ETFs · Crypto — precios en tiempo real</div></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div id="precio-status" style="display:none;font-size:11px;padding:3px 10px;border-radius:20px;background:var(--gbg);color:var(--green);font-weight:600"></div>
+      <button class="btn btn-sm" onclick="actualizarPrecios()" id="btn-actualizar">↺ Actualizar precios</button>
+      <button class="btn btn-primary btn-sm" onclick="resetRV();openModal('modal-rv')">+ Nueva posición</button>
+    </div>
+  </div>
+  <div class="kpi-grid g4">
+    <div class="kpi"><div class="kpi-label">Valor actual (COP)</div><div class="kpi-val" id="rv-val">$0</div><div class="kpi-sub">Al precio del día</div></div>
+    <div class="kpi"><div class="kpi-label">Costo total</div><div class="kpi-val" id="rv-cost">$0</div><div class="kpi-sub">Lo invertido</div></div>
+    <div class="kpi"><div class="kpi-label">G/P total</div><div class="kpi-val" id="rv-gp">$0</div><div class="kpi-sub" id="rv-gp-pct">0%</div></div>
+    <div class="kpi"><div class="kpi-label">Variación hoy</div><div class="kpi-val" id="rv-dia">—</div><div class="kpi-sub" id="rv-dia-s">pendiente actualizar</div></div>
+  </div>
+  <div class="filter-bar">
+    <select id="f-rv-broker" onchange="filtrarRV()">
+      <option value="">Todos los brokers</option>
+      <option>Trii</option><option>XTB</option><option>Interactive Brokers</option>
+      <option>Binance</option><option>Valores Bancolombia</option><option>Tyba</option><option>Otro</option>
+    </select>
+    <select id="f-rv-tipo" onchange="filtrarRV()">
+      <option value="">Todos los tipos</option>
+      <option>Acción CO</option><option>Acción USA</option>
+      <option>ETF</option><option>Crypto</option><option>Fondo</option>
+    </select>
+    <select id="f-rv-estado" onchange="filtrarRV()">
+      <option value="">Todos</option>
+      <option value="pos">Solo positivas</option>
+      <option value="neg">Solo negativas</option>
+    </select>
+    <button class="btn btn-sm" onclick="limpiarFRV()">✕ Limpiar</button>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div><div class="card-title">Mis posiciones</div>
+        <div class="card-sub">Yahoo Finance (acciones/ETFs) · CoinGecko (crypto) · TRM en tiempo real</div>
+      </div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th>Activo</th><th>Broker</th><th class="t-right">Cantidad</th>
+        <th class="t-right">P. compra</th><th class="t-right">P. actual</th>
+        <th class="t-right">Var. hoy</th><th class="t-right">Valor COP</th>
+        <th class="t-right">G/P</th><th class="t-right">Retorno</th>
+        <th>Riesgo</th><th>Acciones</th>
+      </tr></thead>
+      <tbody id="tabla-rv"><tr><td colspan="11"><div class="empty">Cargando…</div></td></tr></tbody>
+    </table></div>
+    <div class="card-footer" id="rv-footer">Carga las posiciones para ver precios de mercado</div>
+  </div>
+</div>
+<div id="modal-rv" class="modal-overlay" onclick="if(event.target===this){resetRV();closeModal('modal-rv')}">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="rv-title">Nueva posición</div>
+      <button class="btn btn-sm" onclick="resetRV();closeModal('modal-rv')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="rv-id"/>
+      <div class="form-grid g2f">
+        <div class="form-group"><label>Tipo de activo</label><select id="rv-tipo">
+          <option>Acción CO</option><option>Acción USA</option>
+          <option>ETF</option><option>Crypto</option><option>Fondo</option><option>Otro</option>
+        </select></div>
+        <div class="form-group"><label>Ticker / Símbolo</label>
+          <input type="text" id="rv-ticker" placeholder="PFBCOL.CL · VOO · bitcoin"/></div>
+        <div class="form-group"><label>Broker / Canal</label><select id="rv-canal">
+          <option>Trii</option><option>XTB</option><option>Interactive Brokers</option>
+          <option>Binance</option><option>Valores Bancolombia</option>
+          <option>Tyba</option><option>Acciones y Valores</option><option>Otro</option>
+        </select></div>
+        <div class="form-group"><label>Riesgo</label><select id="rv-riesgo">
+          <option value="bajo">Bajo</option><option value="moderado" selected>Moderado</option>
+          <option value="alto">Alto</option><option value="muy alto">Muy alto</option>
+        </select></div>
+        <div class="form-group"><label>Cantidad / Unidades</label>
+          <input type="number" id="rv-cantidad" step="0.0001" placeholder="100 acciones · 0.025 BTC"/></div>
+        <div class="form-group"><label>Precio de compra (COP)</label>
+          <input type="number" id="rv-pcomp" step="1" placeholder="38000 COP"/></div>
+        <div class="form-group"><label>Precio actual (COP)</label>
+          <input type="number" id="rv-pact" step="1" placeholder="Se actualiza automático"/></div>
+        <div class="form-group"><label>Comisión (%)</label>
+          <input type="number" id="rv-com" step="0.01" value="0" placeholder="0.3"/></div>
+        <div class="form-group"><label>Fecha de compra</label><input type="date" id="rv-fecha"/></div>
+        <div class="form-group full"><label>Tesis de inversión</label>
+          <input type="text" id="rv-tesis" placeholder="¿Por qué compraste esta posición?"/></div>
+      </div>
+      <div class="alert alert-info" style="margin-top:12px">
+        <div>Tickers soportados: <b>PFBCOL.CL</b>, <b>ECOPETROL.CL</b>, <b>GEB.CL</b> (CO) · <b>VOO</b>, <b>QQQ</b>, <b>AAPL</b> (USA/ETF) · <b>bitcoin</b>, <b>ethereum</b> (crypto — nombre en inglés)</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="resetRV();closeModal('modal-rv')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarRV()">Guardar</button>
+    </div>
+  </div>
+</div>
+<script>
+var TRM_RV=4200,TODAS_POS=[];
+var RIESGO_CLS={bajo:'tag-green',moderado:'tag-blue',alto:'tag-amber','muy alto':'tag-red'};
+
+async function getPrecioMercado(ticker){
+  try{var r=await fetch('/api/precio_mercado?ticker='+encodeURIComponent(ticker));return await r.json();}
+  catch(e){return null;}
+}
+
+function resetRV(){
+  ['rv-tipo','rv-canal','rv-riesgo'].forEach(function(id){var el=document.getElementById(id);if(el)el.selectedIndex=0;});
+  ['rv-ticker','rv-cantidad','rv-pcomp','rv-pact','rv-com','rv-fecha','rv-tesis','rv-id'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('rv-com').value='0';
+  document.getElementById('rv-fecha').value=hoy();
+  document.getElementById('rv-title').textContent='Nueva posición';
+}
+
+function limpiarFRV(){
+  ['f-rv-broker','f-rv-tipo','f-rv-estado'].forEach(function(id){document.getElementById(id).selectedIndex=0;});
+  renderRV(TODAS_POS);
+}
+
+function filtrarRV(){
+  var br=document.getElementById('f-rv-broker').value;
+  var ti=document.getElementById('f-rv-tipo').value;
+  var es=document.getElementById('f-rv-estado').value;
+  renderRV(TODAS_POS.filter(function(r){
+    if(br&&r.canal!==br)return false;
+    if(ti&&r.tipo!==ti)return false;
+    if(es==='pos'&&(r.ganancia||0)<=0)return false;
+    if(es==='neg'&&(r.ganancia||0)>=0)return false;
+    return true;
+  }));
+}
+
+function renderRV(rows){
+  var t=document.getElementById('tabla-rv');
+  if(!rows.length){t.innerHTML='<tr><td colspan="11"><div class="empty">Sin posiciones con esos filtros</div></td></tr>';return;}
+  t.innerHTML=rows.map(function(r){
+    var gp=r.ganancia||0;
+    var varH=r.var_dia_pct!=null
+      ?'<span class="'+(r.var_dia_pct>=0?'up':'dn')'">'+(r.var_dia_pct>=0?'+':'')+r.var_dia_pct.toFixed(2)+'%</span>'
+      :'<span style="color:var(--hint)">—</span>';
+    return '<tr>'
+      +'<td><div style="font-weight:600;font-size:13px">'+r.ticker+'</div>'
+        +'<div style="font-size:10px;color:var(--muted)">'+( r.nombre_mercado||r.tipo)+'</div>'
+        +'<span class="tag tag-gray" style="font-size:9px">'+r.tipo+'</span></td>'
+      +'<td><span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;background:var(--bg);border:.5px solid var(--border-s)">'+r.canal+'</span></td>'
+      +'<td class="mono t-right">'+r.cantidad+'</td>'
+      +'<td class="mono t-right">'+COP(r.precio_comp)+'</td>'
+      +'<td class="mono t-right" style="font-weight:600'+(r.precio_act_ok?';color:var(--green)':'')'">'+ COP(r.precio_act)+'</td>'
+      +'<td class="t-right">'+varH+'</td>'
+      +'<td class="mono t-right" style="font-weight:600">'+COP(r.valor_actual||0)+'</td>'
+      +'<td class="mono t-right"><span class="'+(gp>=0?'up':'dn')+'" style="font-weight:600">'+COP(gp)+'</span></td>'
+      +'<td class="mono t-right"><span class="'+(gp>=0?'up':'dn')'">'+ Pct(r.retorno_pct||0)+'</span></td>'
+      +'<td><span class="tag '+(RIESGO_CLS[r.riesgo]||'tag-gray')+'">'+r.riesgo+'</span></td>'
+      +'<td><div style="display:flex;gap:4px">'
+        +'<button class="btn btn-edit btn-xs" onclick="editarRV('+r.id+')">✏️</button>'
+        +'<button class="btn btn-danger btn-xs" onclick="elimRV('+r.id+')">🗑</button>'
+      +'</div></td></tr>';
+  }).join('');
+}
+
+function calcKPIs(rows){
+  var totV=0,totC=0,totVar=0,nVar=0;
+  rows.forEach(function(r){
+    totV+=r.valor_actual||0;totC+=r.costo_total||0;
+    if(r.var_dia_cop!=null){totVar+=r.var_dia_cop;nVar++;}
+  });
+  var gp=totV-totC;
+  document.getElementById('rv-val').textContent=COP(totV);
+  document.getElementById('rv-cost').textContent=COP(totC);
+  document.getElementById('rv-gp').textContent=COP(gp);
+  document.getElementById('rv-gp').className='kpi-val '+(gp>=0?'up':'dn');
+  document.getElementById('rv-gp-pct').textContent=Pct(totC>0?gp/totC*100:0);
+  if(nVar>0){
+    document.getElementById('rv-dia').textContent=(totVar>=0?'+':'')+COP(totVar);
+    document.getElementById('rv-dia').className='kpi-val '+(totVar>=0?'up':'dn');
+    document.getElementById('rv-dia-s').textContent=nVar+' posición(es) actualizadas hoy';
+  }
+}
+
+async function cargarRV(){
+  try{var m=await api('/api/market');TRM_RV=m.usd_cop||4200;}catch(e){}
+  var rows=await api('/api/renta_variable');
+  if(!rows.length){
+    document.getElementById('tabla-rv').innerHTML='<tr><td colspan="11"><div class="empty"><div class="empty-icon">📊</div>Sin posiciones registradas.</div></td></tr>';
+    return;
+  }
+  rows.forEach(function(r){r.var_dia_pct=null;r.var_dia_cop=null;r.precio_act_ok=false;r.nombre_mercado='';});
+  TODAS_POS=rows;
+  calcKPIs(rows);
+  renderRV(rows);
+}
+
+async function actualizarPrecios(){
+  var btn=document.getElementById('btn-actualizar');
+  var status=document.getElementById('precio-status');
+  btn.textContent='Actualizando…';btn.disabled=true;
+  status.style.display='none';
+  var ok=0,err=[];
+  for(var i=0;i<TODAS_POS.length;i++){
+    var r=TODAS_POS[i];
+    if(!r.ticker)continue;
+    var ticker=r.tipo==='Crypto'?r.ticker.toLowerCase():r.ticker;
+    var d=await getPrecioMercado(ticker);
+    if(d&&d.precio&&!d.error){
+      var pCOP=d.moneda==='USD'?Math.round(d.precio*TRM_RV):Math.round(d.precio);
+      var pAnterior=r.precio_act||r.precio_comp;
+      r.precio_act=pCOP;
+      r.precio_act_ok=true;
+      r.nombre_mercado=d.nombre||ticker;
+      r.var_dia_pct=d.cambio_pct!=null?parseFloat(d.cambio_pct.toFixed(2)):null;
+      r.var_dia_cop=r.var_dia_pct!=null?Math.round(r.cantidad*pAnterior*(r.var_dia_pct/100)):null;
+      r.costo_total=Math.round(r.cantidad*r.precio_comp);
+      r.valor_actual=Math.round(r.cantidad*pCOP);
+      r.ganancia=r.valor_actual-r.costo_total;
+      r.retorno_pct=r.costo_total>0?(r.ganancia/r.costo_total*100):0;
+      await api('/api/renta_variable/'+r.id,'PUT',{
+        tipo:r.tipo,ticker:r.ticker,canal:r.canal,cantidad:r.cantidad,
+        precio_comp:r.precio_comp,precio_act:pCOP,
+        com_pct:r.com_pct||0,fecha:r.fecha,riesgo:r.riesgo,tesis:r.tesis
+      });
+      ok++;
+    }else{err.push(r.ticker);}
+  }
+  calcKPIs(TODAS_POS);
+  filtrarRV();
+  btn.textContent='↺ Actualizar precios';btn.disabled=false;
+  status.style.display='block';
+  if(err.length){
+    status.textContent=ok+' actualizados · No encontrados: '+err.join(', ');
+    status.style.background='var(--abg)';status.style.color='var(--amber)';
+  }else{
+    status.textContent=ok+' precios actualizados ✓';
+    status.style.background='var(--gbg)';status.style.color='var(--green)';
+  }
+  document.getElementById('rv-footer').textContent='Actualizado '+new Date().toLocaleTimeString('es-CO')+' · Yahoo Finance · CoinGecko · TRM $'+TRM_RV.toLocaleString('es-CO');
+}
+
+async function editarRV(id){
+  var r=await api('/api/renta_variable/'+id);
+  document.getElementById('rv-id').value=id;
+  document.getElementById('rv-tipo').value=r.tipo||'Acción CO';
+  document.getElementById('rv-ticker').value=r.ticker||'';;
+  document.getElementById('rv-canal').value=r.canal||'Trii';
+  document.getElementById('rv-riesgo').value=r.riesgo||'moderado';
+  document.getElementById('rv-cantidad').value=r.cantidad||'';;
+  document.getElementById('rv-pcomp').value=r.precio_comp||'';;
+  document.getElementById('rv-pact').value=r.precio_act||'';;
+  document.getElementById('rv-com').value=r.com_pct||0;
+  document.getElementById('rv-fecha').value=r.fecha||'';;
+  document.getElementById('rv-tesis').value=r.tesis||'';;
+  document.getElementById('rv-title').textContent='Editar posición';
+  openModal('modal-rv');
+}
+
+async function guardarRV(){
+  var id=document.getElementById('rv-id').value;
+  var tipo=document.getElementById('rv-tipo').value;
+  var ticker=document.getElementById('rv-ticker').value.trim();
+  if(tipo==='Crypto')ticker=ticker.toLowerCase();
+  else ticker=ticker.toUpperCase();
+  var d={tipo:tipo,ticker:ticker,canal:document.getElementById('rv-canal').value,
+    riesgo:document.getElementById('rv-riesgo').value,
+    cantidad:parseFloat(document.getElementById('rv-cantidad').value)||0,
+    precio_comp:parseFloat(document.getElementById('rv-pcomp').value)||0,
+    precio_act:parseFloat(document.getElementById('rv-pact').value)||parseFloat(document.getElementById('rv-pcomp').value)||0,
+    com_pct:parseFloat(document.getElementById('rv-com').value)||0,
+    fecha:document.getElementById('rv-fecha').value,
+    tesis:document.getElementById('rv-tesis').value};
+  if(!d.cantidad){toast('Ingresa la cantidad',false);return;}
+  if(!d.precio_comp){toast('Ingresa el precio de compra',false);return;}
+  var r=id?await api('/api/renta_variable/'+id,'PUT',d):await api('/api/renta_variable','POST',d);
+  if(r.ok||r.id){toast(id?'Posición actualizada ✅':'Posición guardada ✅');resetRV();closeModal('modal-rv');cargarRV();}
+  else toast('Error al guardar',false);
+}
+
+async function elimRV(id){
+  if(!confirm('¿Eliminar esta posición?'))return;
+  await api('/api/renta_variable/'+id,'DELETE');
+  toast('Eliminada');cargarRV();
+}
+
+resetRV();cargarRV();
+</script>"""
+    return base_html(c, session["user_name"], "renta_variable")
 
 @app.route("/inmobiliario")
 @login_required
-def inmobiliario(): return generic_page("Inmobiliario", "inmobiliario")
+def inmobiliario():
+    c = """<div class="page">
+  <div class="topbar">
+    <div><div class="page-title">Inmobiliario</div><div class="page-sub">Propiedades · FICs inmobiliarios · Crowdfunding</div></div>
+    <div><button class="btn btn-primary btn-sm" onclick="resetInmo();openModal('modal-inmo')">+ Nuevo activo</button></div>
+  </div>
+  <div class="kpi-grid g4">
+    <div class="kpi"><div class="kpi-label">Valor total</div><div class="kpi-val" id="inmo-val">$0</div></div>
+    <div class="kpi"><div class="kpi-label">Canon mensual</div><div class="kpi-val up" id="inmo-can">$0</div></div>
+    <div class="kpi"><div class="kpi-label">Valorización</div><div class="kpi-val" id="inmo-valz">$0</div></div>
+    <div class="kpi"><div class="kpi-label">Renta anual</div><div class="kpi-val up" id="inmo-ran">$0</div></div>
+  </div>
+  <div class="card"><div class="card-header"><div class="card-title">Mis activos inmobiliarios</div></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Tipo</th><th>Nombre</th><th>Canal</th><th class="t-right">Compra</th><th class="t-right">Valor actual</th><th class="t-right">Valorización</th><th class="t-right">Canon/mes</th><th class="t-right">Renta anual</th><th>Período</th><th>Tasa E.A.</th><th>Acciones</th></tr></thead>
+      <tbody id="tabla-inmo"><tr><td colspan="11"><div class="empty">Cargando…</div></td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+<div id="modal-inmo" class="modal-overlay" onclick="if(event.target===this){resetInmo();closeModal('modal-inmo')}">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="inmo-title">Nuevo activo inmobiliario</div>
+      <button class="btn btn-sm" onclick="resetInmo();closeModal('modal-inmo')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="inmo-id"/>
+      <div class="form-grid g2f">
+        <div class="form-group"><label>Tipo</label><select id="inmo-tipo">
+          <option>Apartamento arrendado</option><option>Casa arrendada</option>
+          <option>Local comercial</option><option>Bodega</option>
+          <option>FIC inmobiliario</option><option>Crowdfunding inmobiliario</option>
+          <option>Lote / Terreno</option><option>Otro</option>
+        </select></div>
+        <div class="form-group"><label>Canal / Plataforma</label><select id="inmo-canal">
+          <option>Directo (propietario)</option><option>La Haus</option>
+          <option>Habi</option><option>Tributi</option>
+          <option>FIC Valores Bancolombia</option><option>Otro</option>
+        </select></div>
+        <div class="form-group full"><label>Nombre / Descripción</label>
+          <input type="text" id="inmo-nombre" placeholder="Apto Laureles, FIC inmobiliario…"/></div>
+        <div class="form-group"><label>Valor de compra ($)</label>
+          <input type="number" id="inmo-compra" placeholder="200000000"/></div>
+        <div class="form-group"><label>Valor actual ($)</label>
+          <input type="number" id="inmo-actual" placeholder="230000000"/></div>
+        <div class="form-group"><label>Canon / rendimiento mensual ($)</label>
+          <input type="number" id="inmo-canon" placeholder="1500000"/></div>
+        <div class="form-group"><label>Tasa E.A. (%)</label>
+          <input type="number" id="inmo-tasa" step="0.1" placeholder="8.5"/></div>
+        <div class="form-group"><label>Comisión E.A. (%)</label>
+          <input type="number" id="inmo-com" step="0.1" value="0" placeholder="0"/></div>
+        <div class="form-group"><label>Período pago</label><select id="inmo-periodo">
+          <option value="mensual">Mensual</option><option value="trimestral">Trimestral</option>
+          <option value="semestral">Semestral</option><option value="anual">Anual</option>
+        </select></div>
+        <div class="form-group"><label>Fecha de adquisición</label><input type="date" id="inmo-fecha"/></div>
+        <div class="form-group full"><label>Notas</label>
+          <input type="text" id="inmo-notas" placeholder="Dirección, estado del activo…"/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="resetInmo();closeModal('modal-inmo')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarInmo()">Guardar</button>
+    </div>
+  </div>
+</div>
+<script>
+function resetInmo(){['inmo-tipo','inmo-canal','inmo-periodo'].forEach(function(id){var el=document.getElementById(id);if(el)el.selectedIndex=0;});['inmo-nombre','inmo-compra','inmo-actual','inmo-canon','inmo-tasa','inmo-com','inmo-fecha','inmo-notas','inmo-id'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});document.getElementById('inmo-com').value='0';document.getElementById('inmo-fecha').value=hoy();document.getElementById('inmo-title').textContent='Nuevo activo inmobiliario';}
+async function cargarInmo(){
+  var rows=await api('/api/inmobiliario');
+  var t=document.getElementById('tabla-inmo');
+  if(!rows.length){t.innerHTML='<tr><td colspan="11"><div class="empty">Sin activos registrados</div></td></tr>';['inmo-val','inmo-can','inmo-valz','inmo-ran'].forEach(function(id){document.getElementById(id).textContent='$0';});return;}
+  var totV=0,totCan=0,totVz=0,totRan=0;
+  rows.forEach(function(r){totV+=r.actual||0;totCan+=r.canon||0;totVz+=(r.valorizacion||0);totRan+=r.renta_anual||0;});
+  document.getElementById('inmo-val').textContent=COP(totV);
+  document.getElementById('inmo-can').textContent=COP(totCan);
+  document.getElementById('inmo-valz').textContent=COP(totVz);
+  document.getElementById('inmo-valz').className='kpi-val '+(totVz>=0?'up':'dn');
+  document.getElementById('inmo-ran').textContent=COP(totRan);
+  t.innerHTML=rows.map(function(r){
+    var vz=r.valorizacion||0;
+    return'<tr><td><span class="tag tag-gray">'+r.tipo+'</span></td>'
+      +'<td><b>'+(r.nombre||r.tipo)+'</b></td>'
+      +'<td style="color:var(--muted)">'+r.canal+'</td>'
+      +'<td class="mono t-right">'+COP(r.compra)+'</td>'
+      +'<td class="mono t-right">'+COP(r.actual)+'</td>'
+      +'<td class="mono t-right '+(vz>=0?'up':'dn')+'">'+COP(vz)+'</td>'
+      +'<td class="mono t-right up">'+COP(r.canon)+'</td>'
+      +'<td class="mono t-right up">'+COP(r.renta_anual||r.canon*12)+'</td>'
+      +'<td><span class="period-badge period-'+(r.periodo||'mensual')+'">'+r.periodo+'</span></td>'
+      +'<td class="mono">'+Pct(r.tasa_ea||0)+'</td>'
+      +'<td><div style="display:flex;gap:4px"><button class="btn btn-edit btn-xs" onclick="editarInmo('+r.id+')">✏️</button><button class="btn btn-danger btn-xs" onclick="elimInmo('+r.id+')">🗑</button></div></td></tr>';
+  }).join('');
+}
+async function editarInmo(id){var r=await api('/api/inmobiliario/'+id);document.getElementById('inmo-id').value=id;document.getElementById('inmo-tipo').value=r.tipo||'';document.getElementById('inmo-canal').value=r.canal||'';document.getElementById('inmo-nombre').value=r.nombre||'';document.getElementById('inmo-compra').value=r.compra||'';document.getElementById('inmo-actual').value=r.actual||'';document.getElementById('inmo-canon').value=r.canon||'';document.getElementById('inmo-tasa').value=r.tasa_ea||'';document.getElementById('inmo-com').value=r.com_ea||0;document.getElementById('inmo-periodo').value=r.periodo||'mensual';document.getElementById('inmo-fecha').value=r.fecha||'';document.getElementById('inmo-notas').value=r.notas||'';document.getElementById('inmo-title').textContent='Editar activo';openModal('modal-inmo');}
+async function guardarInmo(){var id=document.getElementById('inmo-id').value;var d={tipo:document.getElementById('inmo-tipo').value,canal:document.getElementById('inmo-canal').value,nombre:document.getElementById('inmo-nombre').value,compra:parseFloat(document.getElementById('inmo-compra').value)||0,actual:parseFloat(document.getElementById('inmo-actual').value)||0,canon:parseFloat(document.getElementById('inmo-canon').value)||0,tasa_ea:parseFloat(document.getElementById('inmo-tasa').value)||0,com_ea:parseFloat(document.getElementById('inmo-com').value)||0,periodo:document.getElementById('inmo-periodo').value,fecha:document.getElementById('inmo-fecha').value,notas:document.getElementById('inmo-notas').value};if(!d.compra){toast('Ingresa el valor de compra',false);return;}var r=id?await api('/api/inmobiliario/'+id,'PUT',d):await api('/api/inmobiliario','POST',d);if(r.ok||r.id){toast('Guardado ✅');resetInmo();closeModal('modal-inmo');cargarInmo();}else toast('Error',false);}
+async function elimInmo(id){if(!confirm('¿Eliminar activo?'))return;await api('/api/inmobiliario/'+id,'DELETE');toast('Eliminado');cargarInmo();}
+resetInmo();cargarInmo();
+</script>"""
+    return base_html(c, session["user_name"], "inmobiliario")
 
 @app.route("/dolares")
 @login_required
-def dolares(): return generic_page("Dólares / USD", "dolares")
+def dolares():
+    c = """<div class="page">
+  <div class="topbar">
+    <div><div class="page-title">Dólares / USD</div><div class="page-sub">Posición en dólares · Ganancia cambiaria</div></div>
+    <div><button class="btn btn-primary btn-sm" onclick="resetUSD();openModal('modal-usd')">+ Nueva posición</button></div>
+  </div>
+  <div class="kpi-grid g4">
+    <div class="kpi"><div class="kpi-label">Total USD</div><div class="kpi-val" id="usd-tot">$0 USD</div></div>
+    <div class="kpi"><div class="kpi-label">Valor en COP (actual)</div><div class="kpi-val" id="usd-cop-act">$0</div></div>
+    <div class="kpi"><div class="kpi-label">Costo en COP</div><div class="kpi-val" id="usd-cop-cos">$0</div></div>
+    <div class="kpi"><div class="kpi-label">G/P cambiaria</div><div class="kpi-val" id="usd-gp">$0</div></div>
+  </div>
+  <div class="kpi-grid g2">
+    <div class="kpi"><div class="kpi-label">TRM actual</div><div class="kpi-val sm" id="usd-trm">$4,200</div></div>
+    <div class="kpi"><div class="kpi-label">TRM promedio de compra</div><div class="kpi-val sm" id="usd-trm-avg">$0</div></div>
+  </div>
+  <div class="card"><div class="card-header"><div class="card-title">Mis posiciones en USD</div></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Tipo</th><th>Nombre</th><th>Canal</th><th class="t-right">Cant. USD</th><th class="t-right">TRM compra</th><th class="t-right">COP compra</th><th class="t-right">COP actual</th><th class="t-right">G/P camb.</th><th class="t-right">Rend. USD</th><th>Fecha</th><th>Acciones</th></tr></thead>
+      <tbody id="tabla-usd"><tr><td colspan="11"><div class="empty">Cargando…</div></td></tr></tbody>
+    </table></div>
+  </div>
+</div>
+<div id="modal-usd" class="modal-overlay" onclick="if(event.target===this){resetUSD();closeModal('modal-usd')}">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header"><div class="modal-title" id="usd-modal-title">Nueva posición en USD</div>
+      <button class="btn btn-sm" onclick="resetUSD();closeModal('modal-usd')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="usd-id"/>
+      <div class="form-grid g2f">
+        <div class="form-group"><label>Tipo</label><select id="usd-tipo">
+          <option>Cuenta USD</option><option>ETF en USD</option>
+          <option>Efectivo USD</option><option>Remesa recibida</option><option>Otro</option>
+        </select></div>
+        <div class="form-group"><label>Canal</label><select id="usd-canal">
+          <option>Nu Colombia USD</option><option>Remitly / Wise</option>
+          <option>Broker internacional</option><option>Efectivo</option><option>Otro</option>
+        </select></div>
+        <div class="form-group full"><label>Nombre / Descripción</label>
+          <input type="text" id="usd-nombre" placeholder="Cuenta Nu USD, ETF VOO…"/></div>
+        <div class="form-group"><label>Cantidad USD</label>
+          <input type="number" id="usd-cant" step="0.01" placeholder="500"/></div>
+        <div class="form-group"><label>TRM de compra (COP/USD)</label>
+          <input type="number" id="usd-trm-c" placeholder="4100"/></div>
+        <div class="form-group"><label>Rendimiento USD (%)</label>
+          <input type="number" id="usd-rend" step="0.01" placeholder="0" value="0"/></div>
+        <div class="form-group"><label>Fecha</label><input type="date" id="usd-fecha"/></div>
+        <div class="form-group full"><label>Notas</label>
+          <input type="text" id="usd-notas" placeholder=""/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="resetUSD();closeModal('modal-usd')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarUSD()">Guardar</button>
+    </div>
+  </div>
+</div>
+<script>
+var TRM_ACT=4200;
+function resetUSD(){['usd-tipo','usd-canal'].forEach(function(id){var el=document.getElementById(id);if(el)el.selectedIndex=0;});['usd-nombre','usd-cant','usd-trm-c','usd-rend','usd-fecha','usd-notas','usd-id'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});document.getElementById('usd-rend').value='0';document.getElementById('usd-trm-c').value=TRM_ACT;document.getElementById('usd-fecha').value=hoy();document.getElementById('usd-modal-title').textContent='Nueva posición en USD';}
+async function cargarUSD(){
+  try{var m=await api('/api/market');TRM_ACT=m.usd_cop||4200;document.getElementById('usd-trm').textContent='$'+TRM_ACT.toLocaleString('es-CO');}catch(e){}
+  var rows=await api('/api/dolares?trm='+TRM_ACT);
+  var t=document.getElementById('tabla-usd');
+  if(!rows.length){t.innerHTML='<tr><td colspan="11"><div class="empty">Sin posiciones en USD</div></td></tr>';return;}
+  var totUSD=0,totCopAct=0,totCopCos=0,totGP=0,wTrm=0;
+  rows.forEach(function(r){totUSD+=r.cant_usd||0;totCopAct+=r.cop_actual||0;totCopCos+=r.cop_compra||0;totGP+=r.gp_cambiaria||0;wTrm+=r.trm_compra*(r.cant_usd||0);});
+  document.getElementById('usd-tot').textContent=totUSD.toFixed(2)+' USD';
+  document.getElementById('usd-cop-act').textContent=COP(totCopAct);
+  document.getElementById('usd-cop-cos').textContent=COP(totCopCos);
+  document.getElementById('usd-gp').textContent=COP(totGP);
+  document.getElementById('usd-gp').className='kpi-val '+(totGP>=0?'up':'dn');
+  document.getElementById('usd-trm-avg').textContent='$'+(totUSD>0?Math.round(wTrm/totUSD).toLocaleString('es-CO'):'0');
+  t.innerHTML=rows.map(function(r){
+    var gp=r.gp_cambiaria||0;
+    return'<tr><td><span class="tag tag-gray">'+r.tipo+'</span></td>'
+      +'<td><b>'+(r.nombre||r.tipo)+'</b></td>'
+      +'<td style="color:var(--muted)">'+r.canal+'</td>'
+      +'<td class="mono t-right">'+r.cant_usd.toFixed(2)+' USD</td>'
+      +'<td class="mono t-right">$'+Math.round(r.trm_compra).toLocaleString('es-CO')+'</td>'
+      +'<td class="mono t-right">'+COP(r.cop_compra)+'</td>'
+      +'<td class="mono t-right">'+COP(r.cop_actual)+'</td>'
+      +'<td class="mono t-right '+(gp>=0?'up':'dn')+'">'+COP(gp)+'</td>'
+      +'<td class="mono t-right">'+(r.rend_usd?Pct(r.rend_usd):'—')+'</td>'
+      +'<td style="color:var(--muted)">'+fmtFecha(r.fecha)+'</td>'
+      +'<td><div style="display:flex;gap:4px"><button class="btn btn-edit btn-xs" onclick="editarUSD('+r.id+')">✏️</button><button class="btn btn-danger btn-xs" onclick="elimUSD('+r.id+')">🗑</button></div></td></tr>';
+  }).join('');
+}
+async function editarUSD(id){var r=await api('/api/dolares/'+id);document.getElementById('usd-id').value=id;document.getElementById('usd-tipo').value=r.tipo||'';document.getElementById('usd-canal').value=r.canal||'';document.getElementById('usd-nombre').value=r.nombre||'';document.getElementById('usd-cant').value=r.cant_usd||'';document.getElementById('usd-trm-c').value=r.trm_compra||'';document.getElementById('usd-rend').value=r.rend_usd||0;document.getElementById('usd-fecha').value=r.fecha||'';document.getElementById('usd-notas').value=r.notas||'';document.getElementById('usd-modal-title').textContent='Editar posición USD';openModal('modal-usd');}
+async function guardarUSD(){var id=document.getElementById('usd-id').value;var d={tipo:document.getElementById('usd-tipo').value,canal:document.getElementById('usd-canal').value,nombre:document.getElementById('usd-nombre').value,cant_usd:parseFloat(document.getElementById('usd-cant').value)||0,trm_compra:parseFloat(document.getElementById('usd-trm-c').value)||TRM_ACT,rend_usd:parseFloat(document.getElementById('usd-rend').value)||0,fecha:document.getElementById('usd-fecha').value,notas:document.getElementById('usd-notas').value};if(!d.cant_usd){toast('Ingresa la cantidad en USD',false);return;}var r=id?await api('/api/dolares/'+id,'PUT',d):await api('/api/dolares','POST',d);if(r.ok||r.id){toast('Guardado ✅');resetUSD();closeModal('modal-usd');cargarUSD();}else toast('Error',false);}
+async function elimUSD(id){if(!confirm('¿Eliminar posición?'))return;await api('/api/dolares/'+id,'DELETE');toast('Eliminada');cargarUSD();}
+resetUSD();cargarUSD();
+</script>"""
+    return base_html(c, session["user_name"], "dolares")
 
 
 # ══════════════════════════════════════════════════════════════
@@ -1642,6 +2304,85 @@ cargar();
 # ══════════════════════════════════════════════════════════════
 #  APIs — MERCADO Y RESUMEN
 # ══════════════════════════════════════════════════════════════
+
+# ══════════════════════════════════════════════════════════════
+#  API — PRECIO DE MERCADO EN TIEMPO REAL
+#  Yahoo Finance para acciones/ETFs · CoinGecko para crypto
+# ══════════════════════════════════════════════════════════════
+
+CRYPTO_IDS = {
+    "bitcoin":"bitcoin","btc":"bitcoin","ethereum":"ethereum","eth":"ethereum",
+    "usdt":"tether","bnb":"binancecoin","sol":"solana","xrp":"ripple",
+    "usdc":"usd-coin","ada":"cardano","avax":"avalanche-2","doge":"dogecoin",
+    "dot":"polkadot","matic":"matic-network","link":"chainlink","ltc":"litecoin",
+    "uni":"uniswap","shib":"shiba-inu","atom":"cosmos","xlm":"stellar",
+}
+
+@app.route("/api/precio_mercado")
+@login_required
+def api_precio_mercado():
+    ticker = request.args.get("ticker","").strip()
+    if not ticker:
+        return jsonify({"error":"ticker requerido"}), 400
+
+    # Detectar si es crypto
+    ticker_low = ticker.lower()
+    crypto_id  = CRYPTO_IDS.get(ticker_low, ticker_low if len(ticker_low) > 3 else None)
+
+    # Intentar CoinGecko primero si parece crypto
+    if ticker_low in CRYPTO_IDS or (len(ticker_low) > 3 and "/" not in ticker and "." not in ticker and ticker_low.isalpha()):
+        cg_id = CRYPTO_IDS.get(ticker_low, ticker_low)
+        try:
+            url = f"https://api.coingecko.com/api/v3/simple/price?ids={cg_id}&vs_currencies=usd&include_24hr_change=true"
+            r = requests.get(url, timeout=8, headers={"Accept":"application/json"})
+            if r.ok:
+                data = r.json()
+                if cg_id in data:
+                    precio    = data[cg_id]["usd"]
+                    cambio    = data[cg_id].get("usd_24h_change")
+                    return jsonify({
+                        "ticker":   ticker,
+                        "nombre":   cg_id.capitalize(),
+                        "precio":   precio,
+                        "moneda":   "USD",
+                        "cambio_pct": round(cambio, 2) if cambio else None,
+                        "fuente":   "CoinGecko",
+                    })
+        except: pass
+
+    # Yahoo Finance para acciones y ETFs
+    # Formatos: PFBCOL.CL, ECOPETROL.CL, VOO, AAPL, QQQ, etc.
+    try:
+        yf_ticker = ticker.upper()
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{yf_ticker}?interval=1d&range=2d"
+        headers = {
+            "User-Agent": "Mozilla/5.0 (compatible; FinTrackCO/1.0)",
+            "Accept": "application/json",
+        }
+        r = requests.get(url, timeout=10, headers=headers)
+        if r.ok:
+            d   = r.json()
+            meta = d.get("chart",{}).get("result",[{}])[0].get("meta",{})
+            precio_act = meta.get("regularMarketPrice") or meta.get("previousClose")
+            precio_ant = meta.get("chartPreviousClose") or meta.get("previousClose")
+            nombre     = meta.get("longName") or meta.get("shortName") or yf_ticker
+            moneda     = meta.get("currency","COP")
+            cambio_pct = None
+            if precio_act and precio_ant and precio_ant > 0:
+                cambio_pct = round((precio_act - precio_ant) / precio_ant * 100, 2)
+            if precio_act:
+                return jsonify({
+                    "ticker":     yf_ticker,
+                    "nombre":     nombre,
+                    "precio":     round(precio_act, 2),
+                    "moneda":     moneda,
+                    "cambio_pct": cambio_pct,
+                    "fuente":     "Yahoo Finance",
+                })
+    except Exception as e:
+        pass
+
+    return jsonify({"error": f"No se encontró precio para {ticker}", "ticker": ticker}), 404
 
 @app.route("/api/market")
 @login_required
