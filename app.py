@@ -296,6 +296,7 @@ def init_db():
                              "estado TEXT DEFAULT 'activa'","fecha_pago TEXT"],
             "metas":        ["tipo_meta TEXT DEFAULT 'ahorro'","estado TEXT DEFAULT 'activa'","notas TEXT"],
             "movimientos":  ["ahorro_interes REAL DEFAULT 0","saldo_restante REAL","cuotas_menos INTEGER DEFAULT 0"],
+            "ingresos":     ["fecha_fin TEXT"],
         }
         for tabla, nuevas in cols.items():
             try:
@@ -763,23 +764,55 @@ cargar();
 def ingresos():
     c = """<div class="page">
   <div class="topbar">
-    <div><div class="page-title">Ingresos</div><div class="page-sub">Salario, freelance, arriendos, dividendos…</div></div>
+    <div><div class="page-title">Ingresos</div><div class="page-sub">Salario · Freelance · Arriendos · Dividendos · Fijos a término</div></div>
     <div><button class="btn btn-primary btn-sm" onclick="resetIng();openModal('modal-ing')">+ Nuevo ingreso</button></div>
   </div>
-  <div class="kpi-grid g3">
-    <div class="kpi"><div class="kpi-label">Total ingresos</div><div class="kpi-val up" id="ing-tot">$0</div></div>
-    <div class="kpi"><div class="kpi-label">Ingreso mensual</div><div class="kpi-val" id="ing-men">$0</div></div>
+
+  <div class="kpi-grid g4">
+    <div class="kpi"><div class="kpi-label">Total registrado</div><div class="kpi-val up" id="ing-tot">$0</div></div>
+    <div class="kpi"><div class="kpi-label">Ingresos mensuales</div><div class="kpi-val" id="ing-men">$0</div><div class="kpi-sub">Recurrentes activos</div></div>
+    <div class="kpi"><div class="kpi-label">Proyección anual</div><div class="kpi-val" id="ing-anual">$0</div><div class="kpi-sub">Mensual × 12</div></div>
     <div class="kpi"><div class="kpi-label">Registros</div><div class="kpi-val" id="ing-cnt">0</div></div>
   </div>
-  <div class="card"><div class="card-header"><div class="card-title">Mis ingresos</div></div>
+
+  <!-- Flujo de caja anual -->
+  <div class="card" id="flujo-card" style="display:none">
+    <div class="card-header"><div><div class="card-title">Flujo de caja anual proyectado</div>
+      <div class="card-sub">Ingresos a término fijo con fecha inicio y fin</div></div></div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px" id="flujo-meses"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Mis ingresos</div>
+      <div style="display:flex;gap:8px">
+        <select id="f-ing-period" onchange="filtrarIng()" style="font-size:11px;padding:4px 8px;border-radius:var(--r);border:.5px solid var(--border-s);background:var(--bg);color:var(--text)">
+          <option value="">Todos los períodos</option>
+          <option value="mensual">Mensual</option>
+          <option value="quincenal">Quincenal</option>
+          <option value="único">Único / Esporádico</option>
+          <option value="término fijo">Término fijo</option>
+          <option value="anual">Anual</option>
+        </select>
+      </div>
+    </div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Categoría</th><th>Descripción</th><th class="t-right">Monto</th><th>Período</th><th>Fecha</th><th>Notas</th><th>Acciones</th></tr></thead>
-      <tbody id="tabla-ing"><tr><td colspan="7"><div class="empty">Cargando…</div></td></tr></tbody>
+      <thead><tr>
+        <th>Categoría</th><th>Descripción</th>
+        <th class="t-right">Monto</th><th>Período</th>
+        <th>Fecha inicio</th><th>Fecha fin</th>
+        <th>Estado</th><th>Notas</th><th>Acciones</th>
+      </tr></thead>
+      <tbody id="tabla-ing"><tr><td colspan="9"><div class="empty">Cargando…</div></td></tr></tbody>
     </table></div>
   </div>
 </div>
+
+<!-- MODAL NUEVO/EDITAR INGRESO -->
 <div id="modal-ing" class="modal-overlay" onclick="if(event.target===this){resetIng();closeModal('modal-ing')}">
-  <div class="modal" style="max-width:480px">
+  <div class="modal" style="max-width:520px">
     <div class="modal-header"><div class="modal-title" id="ing-title">Nuevo ingreso</div>
       <button class="btn btn-sm" onclick="resetIng();closeModal('modal-ing')">✕</button></div>
     <div class="modal-body">
@@ -789,20 +822,37 @@ def ingresos():
           <option>Salario / Nómina</option><option>Freelance / Honorarios</option>
           <option>Arriendo recibido</option><option>Dividendos</option>
           <option>Pensión / Jubilación</option><option>Transferencia familiar</option>
-          <option>Venta activo</option><option>Otro</option>
+          <option>Rendimiento inversión</option><option>Comisiones</option>
+          <option>Venta activo</option><option>Prima / Bono</option>
+          <option>Otro</option>
         </select></div>
-        <div class="form-group"><label>Período</label><select id="ing-period">
-          <option value="mensual">Mensual</option><option value="quincenal">Quincenal</option>
-          <option value="semanal">Semanal</option><option value="anual">Anual</option>
+        <div class="form-group"><label>Período / Frecuencia</label><select id="ing-period" onchange="onChangePeriod()">
+          <option value="mensual">Mensual — recurrente</option>
+          <option value="quincenal">Quincenal</option>
+          <option value="semanal">Semanal</option>
+          <option value="término fijo">Término fijo (con fecha fin)</option>
+          <option value="anual">Anual</option>
           <option value="único">Único / Esporádico</option>
         </select></div>
         <div class="form-group full"><label>Descripción</label>
-          <input type="text" id="ing-desc" placeholder="Salario empresa XYZ, proyecto freelance…"/></div>
-        <div class="form-group"><label>Monto ($)</label>
-          <input type="number" id="ing-monto" placeholder="3500000"/></div>
-        <div class="form-group"><label>Fecha</label><input type="date" id="ing-fecha"/></div>
+          <input type="text" id="ing-desc" placeholder="Empresa XYZ, proyecto freelance, contrato…"/></div>
+        <div class="form-group"><label>Monto por período ($)</label>
+          <input type="number" id="ing-monto" placeholder="6000000"/></div>
+        <div class="form-group"><label>Fecha inicio</label>
+          <input type="date" id="ing-fecha"/></div>
+        <div class="form-group" id="row-fecha-fin"><label>Fecha fin <span style="color:var(--blue);font-size:10px">(término fijo)</span></label>
+          <input type="date" id="ing-fecha-fin" placeholder="Dejar vacío si es indefinido"/></div>
         <div class="form-group full"><label>Notas</label>
-          <input type="text" id="ing-notas" placeholder="Observaciones adicionales…"/></div>
+          <input type="text" id="ing-notas" placeholder="NIT, contrato, observaciones…"/></div>
+      </div>
+      <!-- Preview flujo si es término fijo -->
+      <div id="ing-preview" style="display:none;margin-top:12px;background:var(--bg);border-radius:var(--r);padding:14px">
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Flujo proyectado</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center">
+          <div><div style="font-size:10px;color:var(--muted)">Duración</div><div class="mono" id="prev-dur" style="font-size:15px;font-weight:600;color:var(--blue)"></div></div>
+          <div><div style="font-size:10px;color:var(--muted)">Total estimado</div><div class="mono up" id="prev-tot" style="font-size:15px;font-weight:600"></div></div>
+          <div><div style="font-size:10px;color:var(--muted)">Ingreso anual</div><div class="mono" id="prev-anual" style="font-size:15px;font-weight:600"></div></div>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -811,22 +861,169 @@ def ingresos():
     </div>
   </div>
 </div>
+
 <script>
-function resetIng(){['ing-cat','ing-period'].forEach(function(id){var el=document.getElementById(id);if(el)el.selectedIndex=0;});['ing-desc','ing-monto','ing-fecha','ing-notas','ing-id'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});document.getElementById('ing-fecha').value=hoy();document.getElementById('ing-title').textContent='Nuevo ingreso';}
+var TODOS_ING = [];
+
+function onChangePeriod(){
+  var p = document.getElementById('ing-period').value;
+  var rowFin = document.getElementById('row-fecha-fin');
+  rowFin.style.display = (p==='término fijo' || p==='anual') ? 'flex' : 'none';
+  calcPreviewIng();
+}
+
+function calcPreviewIng(){
+  var p = document.getElementById('ing-period').value;
+  var monto = parseFloat(document.getElementById('ing-monto').value)||0;
+  var fi = document.getElementById('ing-fecha').value;
+  var ff = document.getElementById('ing-fecha-fin').value;
+  var prev = document.getElementById('ing-preview');
+  if(p!=='término fijo'||!monto||!fi||!ff){prev.style.display='none';return;}
+  var d1=new Date(fi),d2=new Date(ff);
+  var meses=Math.max(0,Math.round((d2-d1)/(1000*60*60*24*30)));
+  var total=monto*meses;
+  var anual=monto*12;
+  document.getElementById('prev-dur').textContent=meses+' meses';
+  document.getElementById('prev-tot').textContent=COP(total);
+  document.getElementById('prev-anual').textContent=COP(anual);
+  prev.style.display='block';
+}
+
+function resetIng(){
+  ['ing-cat','ing-period'].forEach(function(id){var el=document.getElementById(id);if(el)el.selectedIndex=0;});
+  ['ing-desc','ing-monto','ing-fecha','ing-fecha-fin','ing-notas','ing-id'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('ing-fecha').value=hoy();
+  document.getElementById('ing-title').textContent='Nuevo ingreso';
+  document.getElementById('ing-preview').style.display='none';
+  document.getElementById('row-fecha-fin').style.display='none';
+}
+
+function filtrarIng(){
+  var p=document.getElementById('f-ing-period').value;
+  var rows=p?TODOS_ING.filter(function(r){return r.period===p;}):TODOS_ING;
+  renderTablaIng(rows);
+}
+
+function estadoIngreso(r){
+  if(!r.fecha_fin) return {txt:'Activo',cls:'tag-green'};
+  var hoy2=new Date();var fin=new Date(r.fecha_fin);
+  if(fin<hoy2) return {txt:'Finalizado',cls:'tag-gray'};
+  var dias=Math.ceil((fin-hoy2)/(1000*60*60*24));
+  if(dias<=30) return {txt:'Vence en '+dias+'d',cls:'tag-amber'};
+  return {txt:'Activo',cls:'tag-green'};
+}
+
+function renderTablaIng(rows){
+  var t=document.getElementById('tabla-ing');
+  if(!rows.length){t.innerHTML='<tr><td colspan="9"><div class="empty">Sin ingresos con esos filtros</div></td></tr>';return;}
+  t.innerHTML=rows.map(function(r){
+    var est=estadoIngreso(r);
+    return'<tr>'
+      +'<td><span class="tag tag-green">'+r.cat+'</span></td>'
+      +'<td style="font-weight:500">'+r.desc+'</td>'
+      +'<td class="mono t-right up" style="font-weight:600">'+COP(r.monto)+'</td>'
+      +'<td><span class="tag tag-gray">'+r.period+'</span></td>'
+      +'<td style="color:var(--muted)">'+fmtFecha(r.fecha)+'</td>'
+      +'<td style="color:var(--muted)">'+(r.fecha_fin?fmtFecha(r.fecha_fin):'Indefinido')+'</td>'
+      +'<td><span class="tag '+est.cls+'">'+est.txt+'</span></td>'
+      +'<td style="color:var(--muted);font-size:11.5px">'+(r.notas||'')+'</td>'
+      +'<td><div style="display:flex;gap:4px">'
+        +'<button class="btn btn-edit btn-xs" onclick="editarIng('+r.id+')">✏️</button>'
+        +'<button class="btn btn-danger btn-xs" onclick="elimIng('+r.id+')">🗑</button>'
+      +'</div></td></tr>';
+  }).join('');
+}
+
+function calcularFlujoCaja(rows){
+  // Solo ingresos con fecha_fin definida (término fijo)
+  var conFin=rows.filter(function(r){return r.fecha_fin;});
+  if(!conFin.length){document.getElementById('flujo-card').style.display='none';return;}
+  document.getElementById('flujo-card').style.display='block';
+  // Calcular por mes (próximos 12 meses)
+  var hoyD=new Date();
+  var meses=[];
+  for(var i=0;i<12;i++){
+    var m=new Date(hoyD.getFullYear(),hoyD.getMonth()+i,1);
+    var label=m.toLocaleDateString('es-CO',{month:'short',year:'2-digit'});
+    var total=0;
+    conFin.forEach(function(r){
+      var fi=new Date(r.fecha);var ff=new Date(r.fecha_fin);
+      if(m>=fi&&m<=ff){total+=parseFloat(r.monto)||0;}
+    });
+    // Agregar mensuales sin fecha_fin
+    rows.filter(function(r){return !r.fecha_fin&&r.period==='mensual';}).forEach(function(r){
+      total+=parseFloat(r.monto)||0;
+    });
+    meses.push({label:label,total:total});
+  }
+  var maxVal=Math.max.apply(null,meses.map(function(m){return m.total;}));
+  document.getElementById('flujo-meses').innerHTML=meses.map(function(m){
+    var pct=maxVal>0?Math.round(m.total/maxVal*100):0;
+    return'<div style="text-align:center">'
+      +'<div style="font-size:11px;font-weight:600;color:var(--green);margin-bottom:4px">'+COP(m.total)+'</div>'
+      +'<div style="height:60px;display:flex;align-items:flex-end;justify-content:center">'
+        +'<div style="width:28px;background:var(--green);border-radius:3px 3px 0 0;height:'+pct+'%;min-height:2px;opacity:.75"></div>'
+      +'</div>'
+      +'<div style="font-size:10px;color:var(--muted);margin-top:3px">'+m.label+'</div>'
+    +'</div>';
+  }).join('');
+}
+
 async function cargarIng(){
   var rows=await api('/api/ingresos');
-  var t=document.getElementById('tabla-ing');
+  TODOS_ING=rows;
   var tot=0,men=0;
-  if(!rows.length){t.innerHTML='<tr><td colspan="7"><div class="empty">Sin ingresos registrados</div></td></tr>';document.getElementById('ing-tot').textContent='$0';document.getElementById('ing-men').textContent='$0';document.getElementById('ing-cnt').textContent='0';return;}
-  rows.forEach(function(r){tot+=r.monto||0;if(r.period==='mensual')men+=r.monto||0;});
+  rows.forEach(function(r){
+    tot+=parseFloat(r.monto)||0;
+    if(r.period==='mensual'&&estadoIngreso(r).txt!=='Finalizado')men+=parseFloat(r.monto)||0;
+  });
   document.getElementById('ing-tot').textContent=COP(tot);
   document.getElementById('ing-men').textContent=COP(men);
+  document.getElementById('ing-anual').textContent=COP(men*12);
   document.getElementById('ing-cnt').textContent=rows.length;
-  t.innerHTML=rows.map(function(r){return'<tr><td><span class="tag tag-green">'+r.cat+'</span></td><td>'+r.desc+'</td><td class="mono t-right up">'+COP(r.monto)+'</td><td style="color:var(--muted)">'+r.period+'</td><td style="color:var(--muted)">'+fmtFecha(r.fecha)+'</td><td style="color:var(--muted);font-size:11.5px">'+(r.notas||'')+'</td><td><div style="display:flex;gap:4px"><button class="btn btn-edit btn-xs" onclick="editarIng('+r.id+')">✏️</button><button class="btn btn-danger btn-xs" onclick="elimIng('+r.id+')">🗑</button></div></td></tr>';}).join('');
+  renderTablaIng(rows);
+  calcularFlujoCaja(rows);
 }
-async function editarIng(id){var r=await api('/api/ingresos/'+id);document.getElementById('ing-id').value=id;document.getElementById('ing-cat').value=r.cat||'';document.getElementById('ing-period').value=r.period||'mensual';document.getElementById('ing-desc').value=r.desc||'';document.getElementById('ing-monto').value=r.monto||'';document.getElementById('ing-fecha').value=r.fecha||'';document.getElementById('ing-notas').value=r.notas||'';document.getElementById('ing-title').textContent='Editar ingreso';openModal('modal-ing');}
-async function guardarIng(){var id=document.getElementById('ing-id').value;var d={cat:document.getElementById('ing-cat').value,period:document.getElementById('ing-period').value,desc:document.getElementById('ing-desc').value,monto:parseFloat(document.getElementById('ing-monto').value)||0,fecha:document.getElementById('ing-fecha').value,notas:document.getElementById('ing-notas').value};if(!d.monto){toast('Ingresa el monto',false);return;}var r=id?await api('/api/ingresos/'+id,'PUT',d):await api('/api/ingresos','POST',d);if(r.ok||r.id){toast('Guardado ✅');resetIng();closeModal('modal-ing');cargarIng();}else toast('Error',false);}
-async function elimIng(id){if(!confirm('¿Eliminar?'))return;await api('/api/ingresos/'+id,'DELETE');toast('Eliminado');cargarIng();}
+
+async function editarIng(id){
+  var r=await api('/api/ingresos/'+id);
+  document.getElementById('ing-id').value=id;
+  document.getElementById('ing-cat').value=r.cat||'';
+  document.getElementById('ing-period').value=r.period||'mensual';
+  document.getElementById('ing-desc').value=r.desc||'';
+  document.getElementById('ing-monto').value=r.monto||'';
+  document.getElementById('ing-fecha').value=r.fecha||'';
+  document.getElementById('ing-fecha-fin').value=r.fecha_fin||'';
+  document.getElementById('ing-notas').value=r.notas||'';
+  document.getElementById('ing-title').textContent='Editar ingreso';
+  onChangePeriod();
+  openModal('modal-ing');
+}
+
+async function guardarIng(){
+  var id=document.getElementById('ing-id').value;
+  var d={
+    cat:    document.getElementById('ing-cat').value,
+    period: document.getElementById('ing-period').value,
+    desc:   document.getElementById('ing-desc').value,
+    monto:  parseFloat(document.getElementById('ing-monto').value)||0,
+    fecha:  document.getElementById('ing-fecha').value||hoy(),
+    fecha_fin: document.getElementById('ing-fecha-fin').value||null,
+    notas:  document.getElementById('ing-notas').value,
+  };
+  if(!d.monto){toast('Ingresa el monto',false);return;}
+  if(!d.desc){toast('Agrega una descripción',false);return;}
+  var r=id?await api('/api/ingresos/'+id,'PUT',d):await api('/api/ingresos','POST',d);
+  if(r.ok||r.id){toast(id?'Ingreso actualizado ✅':'Ingreso guardado ✅');resetIng();closeModal('modal-ing');cargarIng();}
+  else toast('Error al guardar',false);
+}
+
+async function elimIng(id){
+  if(!confirm('¿Eliminar este ingreso?'))return;
+  await api('/api/ingresos/'+id,'DELETE');
+  toast('Eliminado');cargarIng();
+}
+
 resetIng();cargarIng();
 </script>"""
     return base_html(c, session["user_name"], "ingresos")
@@ -2774,6 +2971,293 @@ def api_rendimientos():
             "periodo":r["periodo"],"rend_diario":round(canon/30,2),"rend_mensual":canon,
             "rend_anual":canon*12,"rend_periodo":canon,"rend_acumulado":0,"dias_activo":0,"vence":None})
     return jsonify(res)
+
+
+# ══════════════════════════════════════════════════════════════
+#  APIs — INGRESOS
+# ══════════════════════════════════════════════════════════════
+
+@app.route("/api/ingresos", methods=["GET"])
+@login_required
+def api_ingresos_list():
+    with get_db() as db:
+        rows = db.execute("SELECT * FROM ingresos WHERE usuario=? ORDER BY fecha DESC, creado DESC",(uid(),)).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+@app.route("/api/ingresos", methods=["POST"])
+@login_required
+def api_ingresos_add():
+    d = request.get_json() or {}
+    with get_db() as db:
+        c = db.execute(
+            "INSERT INTO ingresos (usuario,cat,desc,monto,fecha,period,fecha_fin,notas) VALUES (?,?,?,?,?,?,?,?)",
+            (uid(), d.get("cat"), d.get("desc"), float(d.get("monto",0)),
+             d.get("fecha", today()), d.get("period","mensual"),
+             d.get("fecha_fin"), d.get("notas")))
+    return jsonify({"id": c.lastrowid, "ok": True}), 201
+
+@app.route("/api/ingresos/<int:rid>", methods=["GET"])
+@login_required
+def api_ingreso_get(rid):
+    with get_db() as db:
+        r = db.execute("SELECT * FROM ingresos WHERE id=? AND usuario=?",(rid,uid())).fetchone()
+    return jsonify(dict(r)) if r else (jsonify({"error":"no encontrado"}),404)
+
+@app.route("/api/ingresos/<int:rid>", methods=["PUT"])
+@login_required
+def api_ingreso_edit(rid):
+    d = request.get_json() or {}
+    with get_db() as db:
+        db.execute(
+            "UPDATE ingresos SET cat=?,desc=?,monto=?,fecha=?,period=?,fecha_fin=?,notas=? WHERE id=? AND usuario=?",
+            (d.get("cat"), d.get("desc"), float(d.get("monto",0)),
+             d.get("fecha"), d.get("period","mensual"),
+             d.get("fecha_fin"), d.get("notas"), rid, uid()))
+    return jsonify({"ok": True})
+
+@app.route("/api/ingresos/<int:rid>", methods=["DELETE"])
+@login_required
+def api_ingreso_del(rid):
+    db_del("ingresos", rid)
+    return jsonify({"ok": True})
+
+# ══════════════════════════════════════════════════════════════
+#  APIs — GASTOS
+# ══════════════════════════════════════════════════════════════
+
+@app.route("/api/gastos", methods=["GET"])
+@login_required
+def api_gastos_list():
+    with get_db() as db:
+        rows = db.execute("SELECT * FROM gastos WHERE usuario=? ORDER BY fecha DESC, creado DESC",(uid(),)).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+@app.route("/api/gastos", methods=["POST"])
+@login_required
+def api_gastos_add():
+    d = request.get_json() or {}
+    with get_db() as db:
+        c = db.execute(
+            "INSERT INTO gastos (usuario,cat,desc,monto,fecha,tipo,presup,notas) VALUES (?,?,?,?,?,?,?,?)",
+            (uid(), d.get("cat"), d.get("desc"), float(d.get("monto",0)),
+             d.get("fecha", today()), d.get("tipo","variable"),
+             float(d.get("presup",0)), d.get("notas")))
+    return jsonify({"id": c.lastrowid, "ok": True}), 201
+
+@app.route("/api/gastos/<int:rid>", methods=["GET"])
+@login_required
+def api_gasto_get(rid):
+    with get_db() as db:
+        r = db.execute("SELECT * FROM gastos WHERE id=? AND usuario=?",(rid,uid())).fetchone()
+    return jsonify(dict(r)) if r else (jsonify({"error":"no encontrado"}),404)
+
+@app.route("/api/gastos/<int:rid>", methods=["PUT"])
+@login_required
+def api_gasto_edit(rid):
+    d = request.get_json() or {}
+    with get_db() as db:
+        db.execute(
+            "UPDATE gastos SET cat=?,desc=?,monto=?,fecha=?,tipo=?,presup=?,notas=? WHERE id=? AND usuario=?",
+            (d.get("cat"), d.get("desc"), float(d.get("monto",0)),
+             d.get("fecha"), d.get("tipo","variable"),
+             float(d.get("presup",0)), d.get("notas"), rid, uid()))
+    return jsonify({"ok": True})
+
+@app.route("/api/gastos/<int:rid>", methods=["DELETE"])
+@login_required
+def api_gasto_del(rid):
+    db_del("gastos", rid)
+    return jsonify({"ok": True})
+
+# ══════════════════════════════════════════════════════════════
+#  APIs — RENTA VARIABLE
+# ══════════════════════════════════════════════════════════════
+
+def enrich_rv(row):
+    r = dict(row)
+    cant  = float(r.get("cantidad") or 0)
+    pcomp = float(r.get("precio_comp") or 0)
+    pact  = float(r.get("precio_act") or pcomp)
+    r["costo_total"]  = round(cant * pcomp, 0)
+    r["valor_actual"] = round(cant * pact, 0)
+    r["ganancia"]     = round(r["valor_actual"] - r["costo_total"], 0)
+    r["retorno_pct"]  = round(r["ganancia"] / r["costo_total"] * 100, 2) if r["costo_total"] > 0 else 0
+    return r
+
+@app.route("/api/renta_variable", methods=["GET"])
+@login_required
+def api_rv_list():
+    with get_db() as db:
+        rows = db.execute("SELECT * FROM renta_variable WHERE usuario=? ORDER BY creado DESC",(uid(),)).fetchall()
+    return jsonify([enrich_rv(r) for r in rows])
+
+@app.route("/api/renta_variable", methods=["POST"])
+@login_required
+def api_rv_add():
+    d = request.get_json() or {}
+    with get_db() as db:
+        c = db.execute(
+            "INSERT INTO renta_variable (usuario,tipo,ticker,canal,cantidad,precio_comp,precio_act,com_pct,fecha,riesgo,tesis) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            (uid(), d.get("tipo"), d.get("ticker"), d.get("canal"),
+             float(d.get("cantidad",0)), float(d.get("precio_comp",0)),
+             float(d.get("precio_act") or d.get("precio_comp",0)),
+             float(d.get("com_pct",0)), d.get("fecha", today()),
+             d.get("riesgo","moderado"), d.get("tesis")))
+    return jsonify({"id": c.lastrowid, "ok": True}), 201
+
+@app.route("/api/renta_variable/<int:rid>", methods=["GET"])
+@login_required
+def api_rv_get(rid):
+    with get_db() as db:
+        r = db.execute("SELECT * FROM renta_variable WHERE id=? AND usuario=?",(rid,uid())).fetchone()
+    return jsonify(enrich_rv(r)) if r else (jsonify({"error":"no encontrado"}),404)
+
+@app.route("/api/renta_variable/<int:rid>", methods=["PUT"])
+@login_required
+def api_rv_edit(rid):
+    d = request.get_json() or {}
+    with get_db() as db:
+        db.execute(
+            "UPDATE renta_variable SET tipo=?,ticker=?,canal=?,cantidad=?,precio_comp=?,precio_act=?,com_pct=?,fecha=?,riesgo=?,tesis=? WHERE id=? AND usuario=?",
+            (d.get("tipo"), d.get("ticker"), d.get("canal"),
+             float(d.get("cantidad",0)), float(d.get("precio_comp",0)),
+             float(d.get("precio_act") or d.get("precio_comp",0)),
+             float(d.get("com_pct",0)), d.get("fecha"), d.get("riesgo","moderado"),
+             d.get("tesis"), rid, uid()))
+    return jsonify({"ok": True})
+
+@app.route("/api/renta_variable/<int:rid>", methods=["DELETE"])
+@login_required
+def api_rv_del(rid):
+    db_del("renta_variable", rid)
+    return jsonify({"ok": True})
+
+# ══════════════════════════════════════════════════════════════
+#  APIs — INMOBILIARIO
+# ══════════════════════════════════════════════════════════════
+
+def enrich_inmo(row):
+    r = dict(row)
+    r["valorizacion"] = round(float(r.get("actual") or 0) - float(r.get("compra") or 0), 0)
+    r["renta_anual"]  = round(float(r.get("canon") or 0) * 12, 0)
+    return r
+
+@app.route("/api/inmobiliario", methods=["GET"])
+@login_required
+def api_inmo_list():
+    with get_db() as db:
+        rows = db.execute("SELECT * FROM inmobiliario WHERE usuario=? ORDER BY creado DESC",(uid(),)).fetchall()
+    return jsonify([enrich_inmo(r) for r in rows])
+
+@app.route("/api/inmobiliario", methods=["POST"])
+@login_required
+def api_inmo_add():
+    d = request.get_json() or {}
+    with get_db() as db:
+        c = db.execute(
+            "INSERT INTO inmobiliario (usuario,tipo,nombre,canal,compra,actual,canon,tasa_ea,com_ea,periodo,fecha,notas) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            (uid(), d.get("tipo"), d.get("nombre"), d.get("canal"),
+             float(d.get("compra",0)), float(d.get("actual") or d.get("compra",0)),
+             float(d.get("canon",0)), float(d.get("tasa_ea",0)),
+             float(d.get("com_ea",0)), d.get("periodo","mensual"),
+             d.get("fecha", today()), d.get("notas")))
+    return jsonify({"id": c.lastrowid, "ok": True}), 201
+
+@app.route("/api/inmobiliario/<int:rid>", methods=["GET"])
+@login_required
+def api_inmo_get(rid):
+    with get_db() as db:
+        r = db.execute("SELECT * FROM inmobiliario WHERE id=? AND usuario=?",(rid,uid())).fetchone()
+    return jsonify(enrich_inmo(r)) if r else (jsonify({"error":"no encontrado"}),404)
+
+@app.route("/api/inmobiliario/<int:rid>", methods=["PUT"])
+@login_required
+def api_inmo_edit(rid):
+    d = request.get_json() or {}
+    with get_db() as db:
+        db.execute(
+            "UPDATE inmobiliario SET tipo=?,nombre=?,canal=?,compra=?,actual=?,canon=?,tasa_ea=?,com_ea=?,periodo=?,fecha=?,notas=? WHERE id=? AND usuario=?",
+            (d.get("tipo"), d.get("nombre"), d.get("canal"),
+             float(d.get("compra",0)), float(d.get("actual") or d.get("compra",0)),
+             float(d.get("canon",0)), float(d.get("tasa_ea",0)),
+             float(d.get("com_ea",0)), d.get("periodo","mensual"),
+             d.get("fecha"), d.get("notas"), rid, uid()))
+    return jsonify({"ok": True})
+
+@app.route("/api/inmobiliario/<int:rid>", methods=["DELETE"])
+@login_required
+def api_inmo_del(rid):
+    db_del("inmobiliario", rid)
+    return jsonify({"ok": True})
+
+# ══════════════════════════════════════════════════════════════
+#  APIs — DÓLARES
+# ══════════════════════════════════════════════════════════════
+
+def enrich_usd(row, trm=4200):
+    r = dict(row)
+    cant = float(r.get("cant_usd") or 0)
+    trm_c = float(r.get("trm_compra") or trm)
+    r["cop_compra"]    = round(cant * trm_c, 0)
+    r["cop_actual"]    = round(cant * trm, 0)
+    r["gp_cambiaria"]  = round(r["cop_actual"] - r["cop_compra"], 0)
+    return r
+
+@app.route("/api/dolares", methods=["GET"])
+@login_required
+def api_usd_list():
+    trm = float(request.args.get("trm", 4200))
+    with get_db() as db:
+        rows = db.execute("SELECT * FROM dolares WHERE usuario=? ORDER BY creado DESC",(uid(),)).fetchall()
+    return jsonify([enrich_usd(r, trm) for r in rows])
+
+@app.route("/api/dolares", methods=["POST"])
+@login_required
+def api_usd_add():
+    d = request.get_json() or {}
+    with get_db() as db:
+        c = db.execute(
+            "INSERT INTO dolares (usuario,tipo,nombre,canal,cant_usd,trm_compra,rend_usd,fecha,notas) VALUES (?,?,?,?,?,?,?,?,?)",
+            (uid(), d.get("tipo"), d.get("nombre"), d.get("canal"),
+             float(d.get("cant_usd",0)), float(d.get("trm_compra",4200)),
+             float(d.get("rend_usd",0)), d.get("fecha", today()), d.get("notas")))
+    return jsonify({"id": c.lastrowid, "ok": True}), 201
+
+@app.route("/api/dolares/<int:rid>", methods=["GET"])
+@login_required
+def api_usd_get(rid):
+    with get_db() as db:
+        r = db.execute("SELECT * FROM dolares WHERE id=? AND usuario=?",(rid,uid())).fetchone()
+    return jsonify(enrich_usd(r)) if r else (jsonify({"error":"no encontrado"}),404)
+
+@app.route("/api/dolares/<int:rid>", methods=["PUT"])
+@login_required
+def api_usd_edit(rid):
+    d = request.get_json() or {}
+    with get_db() as db:
+        db.execute(
+            "UPDATE dolares SET tipo=?,nombre=?,canal=?,cant_usd=?,trm_compra=?,rend_usd=?,fecha=?,notas=? WHERE id=? AND usuario=?",
+            (d.get("tipo"), d.get("nombre"), d.get("canal"),
+             float(d.get("cant_usd",0)), float(d.get("trm_compra",4200)),
+             float(d.get("rend_usd",0)), d.get("fecha"), d.get("notas"),
+             rid, uid()))
+    return jsonify({"ok": True})
+
+@app.route("/api/dolares/<int:rid>", methods=["DELETE"])
+@login_required
+def api_usd_del(rid):
+    db_del("dolares", rid)
+    return jsonify({"ok": True})
+
+# ══════════════════════════════════════════════════════════════
+#  API — MOVIMIENTOS DELETE
+# ══════════════════════════════════════════════════════════════
+
+@app.route("/api/movimientos/<int:rid>", methods=["DELETE"])
+@login_required
+def api_mov_del(rid):
+    db_del("movimientos", rid)
+    return jsonify({"ok": True})
 
 @app.route("/health")
 def health():
