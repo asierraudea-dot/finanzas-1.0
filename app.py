@@ -12,7 +12,19 @@ import sqlite3, hashlib, os, secrets, requests, math
 from datetime import datetime, date
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
+
+# SECRET_KEY estable entre reinicios (Render duerme cada 15 min en plan gratis).
+# IMPORTANTE: configurar variable de entorno SECRET_KEY en Render con valor fijo.
+# Fallback: clave derivada del path del archivo (estable pero no ideal para producción).
+_fallback_key = hashlib.sha256(__file__.encode()).hexdigest()
+app.secret_key = os.environ.get("SECRET_KEY", _fallback_key)
+
+# Sesión permanente: sobrevive al cierre del navegador (30 días)
+from datetime import timedelta
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"]   = False  # cambiar a True si usas HTTPS exclusivo
+
 DB = os.path.join(os.path.dirname(__file__), "fintrack.db")
 
 # ══════════════════════════════════════════════════════════════
@@ -545,6 +557,9 @@ def root():
 
 @app.route("/login", methods=["GET","POST"])
 def login():
+    # Si ya está logueado, ir directo al dashboard
+    if "user_id" in session:
+        return redirect(url_for("dashboard"))
     if request.method == "POST":
         email = request.form.get("email","").strip().lower()
         pw    = request.form.get("password","")
@@ -552,6 +567,7 @@ def login():
             u = db.execute("SELECT * FROM usuarios WHERE email=? AND password=?",
                            (email, hash_pw(pw))).fetchone()
         if u:
+            session.permanent    = True   # sesión dura 30 días aunque cierre el navegador
             session["user_id"]   = u["id"]
             session["user_name"] = u["nombre"]
             return redirect(url_for("dashboard"))
@@ -573,6 +589,9 @@ def login():
 
 @app.route("/registro", methods=["GET","POST"])
 def registro():
+    # Si ya está logueado, ir directo al dashboard
+    if "user_id" in session:
+        return redirect(url_for("dashboard"))
     if request.method == "POST":
         nombre = request.form.get("nombre","").strip()
         email  = request.form.get("email","").strip().lower()
