@@ -25,7 +25,11 @@ app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=30)
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"]   = False  # cambiar a True si usas HTTPS exclusivo
 
-DB = os.path.join(os.path.dirname(__file__), "fintrack.db")
+# Render.com: usar disco persistente si está disponible
+# Configurar en Render: Add Disk → /var/data → 1GB (plan gratuito no tiene disco)
+# Como fallback usamos /tmp que sobrevive entre requests pero no entre deploys
+_data_dir = "/var/data" if os.path.isdir("/var/data") else os.path.dirname(os.path.abspath(__file__))
+DB = os.path.join(_data_dir, "fintrack.db")
 
 # ══════════════════════════════════════════════════════════════
 #  MOTOR DE RENDIMIENTOS
@@ -643,18 +647,22 @@ def dashboard():
   <div class="topbar">
     <div><div class="page-title">Dashboard</div><div class="page-sub" id="fhoy"></div></div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-sm" onclick="openAlerts()" id="bell-btn">🔔 Alertas</button>
-      <button class="btn btn-sm" onclick="location.reload()">↺</button>
+      <button class="btn btn-sm" id="bell-btn" onclick="openAlerts()">Alertas</button>
+      <button class="btn btn-sm" onclick="loadDash()">↺</button>
     </div>
   </div>
+
+  <!-- MERCADO -->
   <div class="mkt-bar">
     <div class="mkt-tile"><div class="mkt-name">USD / COP</div><div class="mkt-val" id="mk-usd">…</div><div class="mkt-sub" id="mk-us">TRM</div></div>
     <div class="mkt-tile"><div class="mkt-name">Oro XAU/USD</div><div class="mkt-val" id="mk-oro">…</div><div class="mkt-sub">Por onza</div></div>
     <div class="mkt-tile"><div class="mkt-name">Tasa BR</div><div class="mkt-val">9.50%</div><div class="mkt-sub">Banco República</div></div>
     <div class="mkt-tile"><div class="mkt-name">IPC anual</div><div class="mkt-val">5.2%</div><div class="mkt-sub">Inflación CO</div></div>
   </div>
+
+  <!-- FLUJO -->
   <div class="flujo">
-    <div class="flujo-box" style="border-top:2px solid var(--green)"><div class="flujo-lbl">Ingresos</div><div class="flujo-val up" id="f-ing">$0</div><div class="flujo-pct">total</div></div>
+    <div class="flujo-box" style="border-top:2px solid var(--green)"><div class="flujo-lbl">Ingresos</div><div class="flujo-val up" id="f-ing">$0</div><div class="flujo-pct" id="f-ing-s">total</div></div>
     <div class="arrow">→</div>
     <div class="flujo-box" style="border-top:2px solid var(--red)"><div class="flujo-lbl">Gastos</div><div class="flujo-val dn" id="f-gas">$0</div><div class="flujo-pct" id="f-gp">—</div></div>
     <div class="arrow">→</div>
@@ -663,51 +671,145 @@ def dashboard():
     <div class="flujo-box" style="border-top:2px solid var(--purple)"><div class="flujo-lbl">Portafolio</div><div class="flujo-val" style="color:var(--purple)" id="f-port">$0</div><div class="flujo-pct">acumulado</div></div>
   </div>
   <div id="flujo-alert"></div>
+
+  <!-- KPIs PRINCIPALES -->
   <div class="kpi-grid g4">
     <div class="kpi"><div class="kpi-label">Patrimonio neto</div><div class="kpi-val" id="k-neto">$0</div><div class="kpi-delta" id="k-neto-t">Activos − Pasivos</div></div>
     <div class="kpi"><div class="kpi-label">Portafolio total</div><div class="kpi-val" id="k-port">$0</div><div class="kpi-sub">RF+RV+Inmo+USD</div></div>
-    <div class="kpi"><div class="kpi-label">Rend. hoy (diario)</div><div class="kpi-val up" id="k-rdia">$0</div><div class="kpi-sub">Cuentas activas</div></div>
+    <div class="kpi"><div class="kpi-label">Rend. diario</div><div class="kpi-val up" id="k-rdia">$0</div><div class="kpi-sub">Cuentas activas</div></div>
     <div class="kpi"><div class="kpi-label">Rend. mensual</div><div class="kpi-val up" id="k-rmes">$0</div></div>
   </div>
   <div class="kpi-grid g4">
     <div class="kpi"><div class="kpi-label">Rend. anual proyectado</div><div class="kpi-val up" id="k-raño">$0</div></div>
-    <div class="kpi"><div class="kpi-label">Rend. acumulado real</div><div class="kpi-val up" id="k-racum">$0</div><div class="kpi-sub">Desde inicio</div></div>
+    <div class="kpi"><div class="kpi-label">Rend. acumulado real</div><div class="kpi-val up" id="k-racum">$0</div></div>
     <div class="kpi"><div class="kpi-label">Total deudas</div><div class="kpi-val dn" id="k-deu">$0</div><div class="kpi-sub" id="k-deu-r">Ratio: —</div></div>
     <div class="kpi"><div class="kpi-label">Cuotas / mes</div><div class="kpi-val dn" id="k-deu-c">$0</div></div>
   </div>
+
+  <!-- INDICADORES FINANCIEROS -->
+  <div class="card" id="ind-card">
+    <div class="card-header">
+      <div><div class="card-title">Indicadores financieros</div>
+        <div class="card-sub">Salud patrimonial — Meta: 12+ puntos de 15</div>
+      </div>
+      <div id="ind-score-badge" style="font-size:22px;font-weight:700;padding:6px 16px;border-radius:10px;background:var(--bg)">— / 15</div>
+    </div>
+    <div class="table-wrap">
+      <table style="min-width:600px">
+        <thead><tr>
+          <th>Área</th><th>Indicador</th><th>Fórmula</th>
+          <th class="t-right">Resultado</th><th>Meta</th>
+          <th class="t-right">Puntos</th><th>Estado</th>
+        </tr></thead>
+        <tbody id="tabla-ind">
+          <tr><td colspan="7"><div class="empty">Cargando indicadores…</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card-footer">
+      <span id="ind-nota">Registra ingresos, gastos, portafolio y deudas para ver tus indicadores.</span>
+    </div>
+  </div>
+
+  <!-- ALERTAS PANEL -->
   <div id="alertas-panel"></div>
+
+  <!-- MODAL ALERTAS -->
   <div id="modal-alertas" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-alertas')">
-    <div class="modal" style="max-width:420px">
-      <div class="modal-header"><div class="modal-title">🔔 Alertas activas</div>
+    <div class="modal" style="max-width:440px">
+      <div class="modal-header"><div class="modal-title">Alertas activas</div>
         <button class="btn btn-sm" onclick="closeModal('modal-alertas')">✕</button></div>
       <div class="modal-body" id="modal-alertas-body"></div>
     </div>
   </div>
 </div>
+
 <script>
 var TRM=4200,RESUMEN=null;
 document.getElementById('fhoy').textContent=new Date().toLocaleDateString('es-CO',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+var IND_CONFIG=[
+  {area:'ACTIVOS',   ind:'Indicador 1',  label:'Nivel de activos productivos', formula:'Activos productivos / Activos totales', key:'activos_productivos', tipo:'pct',  meta:50,  meta_txt:'Mayor 50%'},
+  {area:'PASIVOS',   ind:'Indicador 2',  label:'Apalancamiento financiero',     formula:'Deuda buena / Total deudas',            key:'apalancamiento',      tipo:'pct',  meta:50,  meta_txt:'Mayor 50%'},
+  {area:'PATRIMONIO',ind:'Indicador 3',  label:'Patrimonio / Riqueza',          formula:'Activos totales − Pasivos',             key:'patrimonio',          tipo:'cop',  meta:0,   meta_txt:'Mayor que $0'},
+  {area:'INGRESOS',  ind:'Indicador 4',  label:'Ingresos por activos productivos', formula:'Ingresos activos / Total ingresos', key:'ingresos_activos',    tipo:'pct',  meta:50,  meta_txt:'Mayor 50%'},
+  {area:'GASTOS',    ind:'Indicador 5',  label:'Libertad financiera',           formula:'Ing. activos − Gastos fijos',          key:'libertad_financiera', tipo:'cop',  meta:1,   meta_txt:'Mayor que $1'},
+];
+
+function renderIndicadores(ind){
+  if(!ind) return;
+  var sc=ind.score||{};
+  var totalPts=ind.total_pts||0;
+  var metaPts=ind.meta_pts||15;
+  var badge=document.getElementById('ind-score-badge');
+  badge.textContent=totalPts+' / '+metaPts;
+  badge.style.background=totalPts>=12?'var(--gbg)':totalPts>=8?'var(--abg)':'var(--rbg)';
+  badge.style.color=totalPts>=12?'var(--green)':totalPts>=8?'var(--amber)':'var(--red)';
+
+  var rows=IND_CONFIG.map(function(cfg){
+    var sk='ind'+(IND_CONFIG.indexOf(cfg)+1);
+    var s=sc[sk]||{};
+    var val=ind[cfg.key];
+    var pts=s.pts||0;
+    var ptsColor=pts>=3?'var(--green)':pts>=1?'var(--amber)':'var(--red)';
+    var valStr=cfg.tipo==='pct'?val+'%':COP(val||0);
+    var valColor=pts>=3?'var(--green)':pts>=1?'var(--muted)':'var(--red)';
+    var estadoTxt=pts>=3?'Muy bien':pts>=1?'Ok — mejorar':'Gestionar';
+    var estadoCls=pts>=3?'tag-green':pts>=1?'tag-amber':'tag-red';
+    return '<tr>'
+      +'<td style="color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase">'+cfg.area+'</td>'
+      +'<td><div style="font-size:12px;font-weight:600">'+cfg.ind+'</div>'
+        +'<div style="font-size:10.5px;color:var(--blue)">'+cfg.label+'</div></td>'
+      +'<td style="font-size:11px;color:var(--muted);font-style:italic">'+cfg.formula+'</td>'
+      +'<td class="t-right"><span style="font-size:15px;font-weight:700;color:'+valColor+'">'+valStr+'</span></td>'
+      +'<td style="font-size:11px;color:var(--muted)">'+cfg.meta_txt+'</td>'
+      +'<td class="t-right"><span style="font-size:16px;font-weight:700;color:'+ptsColor+'">'+pts+'</span></td>'
+      +'<td><span class="tag '+estadoCls+'">'+estadoTxt+'</span></td>'
+      +'</tr>';
+  });
+  document.getElementById('tabla-ind').innerHTML=rows.join('');
+  document.getElementById('ind-nota').textContent=
+    'Puntaje: '+totalPts+'/'+metaPts+' puntos · '+
+    (totalPts>=12?'Salud financiera excelente':totalPts>=8?'Salud financiera en desarrollo — sigue mejorando':'Oportunidad de mejora — enfócate en activos productivos e ingresos pasivos');
+}
+
 async function loadDash(){
-  try{var m=await api('/api/market');TRM=m.usd_cop||4200;
+  try{
+    var m=await api('/api/market');
+    TRM=m.usd_cop||4200;
     document.getElementById('mk-usd').textContent=TRM.toLocaleString('es-CO');
     document.getElementById('mk-us').textContent='Actualizado hoy';
     if(m.gold_usd)document.getElementById('mk-oro').textContent='$'+Math.round(m.gold_usd).toLocaleString('en-US');
   }catch(e){}
-  try{var r=await api('/api/resumen?trm='+TRM);RESUMEN=r;
+
+  try{
+    var r=await api('/api/resumen?trm='+TRM);
+    RESUMEN=r;
+
+    // Flujo
     document.getElementById('f-ing').textContent=COP(r.ingresos);
     document.getElementById('f-gas').textContent=COP(r.gastos);
     document.getElementById('f-aho').textContent=COP(r.ahorro);
     document.getElementById('f-port').textContent=COP(r.portafolio);
-    if(r.ingresos>0){document.getElementById('f-gp').textContent=(r.gastos/r.ingresos*100).toFixed(1)+'% del ingreso';document.getElementById('f-ap').textContent=(r.ahorro_mensual/r.ingresos*100).toFixed(1)+'% del ingreso';}
+    if(r.ingresos>0){
+      document.getElementById('f-gp').textContent=(r.gastos/r.ingresos*100).toFixed(1)+'% del ingreso';
+      document.getElementById('f-ap').textContent=(r.ahorro_mensual/r.ingresos*100).toFixed(1)+'% del ingreso';
+    }
+
+    // Alerta flujo
     var fa=document.getElementById('flujo-alert');
-    if(r.ingresos>0){var pG=r.gastos/r.ingresos*100;
-      if(pG>80)fa.innerHTML='<div class="alert alert-danger">🔴 <div><b>Gastos críticos ('+pG.toFixed(1)+'%)</b> Reduce gastos variables urgentemente.</div></div>';
-      else if(pG>60)fa.innerHTML='<div class="alert alert-warn">⚠️ <div><b>Gastos elevados ('+pG.toFixed(1)+'%)</b> Sigue la regla 50/30/20.</div></div>';
-      else fa.innerHTML='<div class="alert alert-ok">✅ <div><b>Gastos saludables ('+pG.toFixed(1)+'%)</b></div></div>';}
+    if(r.ingresos>0){
+      var pG=r.gastos/r.ingresos*100;
+      if(pG>80)fa.innerHTML='<div class="alert alert-danger"><span>—</span><div><b>Gastos críticos ('+pG.toFixed(1)+'%)</b> Reduce gastos variables urgentemente.</div></div>';
+      else if(pG>60)fa.innerHTML='<div class="alert alert-warn"><span>!</span><div><b>Gastos elevados ('+pG.toFixed(1)+'%)</b> Aplica la regla 50/30/20.</div></div>';
+      else fa.innerHTML='<div class="alert alert-ok"><span>✓</span><div><b>Gastos saludables ('+pG.toFixed(1)+'%)</b></div></div>';
+    }
+
+    // KPIs
     var rn=r.rendimientos||{};
     document.getElementById('k-neto').textContent=COP(r.neto);
     document.getElementById('k-neto-t').className='kpi-delta '+(r.neto>=0?'up':'dn');
-    document.getElementById('k-neto-t').textContent=r.neto>=0?'Activos > Pasivos ✅':'⚠️ Pasivos > Activos';
+    document.getElementById('k-neto-t').textContent=r.neto>=0?'Activos > Pasivos':'Pasivos > Activos';
     document.getElementById('k-port').textContent=COP(r.portafolio);
     document.getElementById('k-rdia').textContent=COP(rn.total_diario||0);
     document.getElementById('k-rmes').textContent=COP(rn.total_mensual||0);
@@ -715,33 +817,38 @@ async function loadDash(){
     document.getElementById('k-racum').textContent=COP(rn.rf_acumulado||0);
     document.getElementById('k-deu').textContent=COP(r.deudas);
     document.getElementById('k-deu-c').textContent=COP(r.deudas_cuota||0);
-    document.getElementById('k-deu-r').textContent='Ratio: '+(r.portafolio>0?(r.deudas/r.portafolio*100).toFixed(1):0)+'%';
+    document.getElementById('k-deu-r').textContent='Ratio deuda/portafolio: '+(r.portafolio>0?(r.deudas/r.portafolio*100).toFixed(1):0)+'%';
+
+    // Indicadores financieros
+    if(r.indicadores) renderIndicadores(r.indicadores);
+
+    // Alertas
     var ap=document.getElementById('alertas-panel');
-    if(r.alertas&&r.alertas.length){ap.innerHTML=r.alertas.map(function(a){return'<div class="alert '+(a.tipo==='critical'?'alert-danger':a.tipo==='warning'?'alert-warn':'alert-info')+'"><span>'+(a.tipo==='critical'?'🔴':'⚠️')+'</span><div>'+a.msg+'</div></div>';}).join('');
-      var crits=r.alertas.filter(function(a){return a.tipo==='critical'||a.tipo==='warning';}).length;
-      if(crits>0)document.getElementById('bell-btn').textContent=crits+' alertas';}
-  }catch(e){console.error(e);}
+    var al=r.alertas||[];
+    if(al.length){
+      ap.innerHTML=al.map(function(a){
+        return'<div class="alert '+(a.tipo==='critical'?'alert-danger':a.tipo==='warning'?'alert-warn':'alert-info')+'"><span>'+(a.tipo==='critical'?'!':'?')+'</span><div>'+a.msg+'</div></div>';
+      }).join('');
+      var crits=al.filter(function(a){return a.tipo==='critical'||a.tipo==='warning';}).length;
+      if(crits>0)document.getElementById('bell-btn').textContent=crits+' alertas';
+    }
+  }catch(e){console.error('Dashboard error:',e);}
 }
-function openAlerts(){if(!RESUMEN)return;var body=document.getElementById('modal-alertas-body');var al=RESUMEN.alertas||[];
-  if(!al.length){body.innerHTML='<div class="empty"><div class="empty-icon">✅</div>Sin alertas</div>';return;}
-  body.innerHTML=al.map(function(a){return'<div style="background:var(--bg);border-radius:9px;padding:12px 14px;margin-bottom:8px;border-left:3px solid '+(a.tipo==='critical'?'var(--red)':a.tipo==='warning'?'var(--amber)':'var(--blue)')+'"><div style="font-size:12.5px;font-weight:600;margin-bottom:3px">'+(a.tipo==='critical'?'🔴 Crítico':'⚠️ Aviso')+'</div><div style="font-size:12px;color:var(--muted)">'+a.msg+'</div></div>';}).join('');
-  openModal('modal-alertas');}
+
+function openAlerts(){
+  if(!RESUMEN)return;
+  var body=document.getElementById('modal-alertas-body');
+  var al=RESUMEN.alertas||[];
+  if(!al.length){body.innerHTML='<div class="empty">Sin alertas activas</div>';return;}
+  body.innerHTML=al.map(function(a){
+    return'<div style="background:var(--bg);border-radius:9px;padding:12px 14px;margin-bottom:8px;border-left:3px solid '+(a.tipo==='critical'?'var(--red)':a.tipo==='warning'?'var(--amber)':'var(--blue)')+'"><b>'+(a.tipo==='critical'?'Crítico':'Aviso')+'</b><br><span style="font-size:12px;color:var(--muted)">'+a.msg+'</span></div>';
+  }).join('');
+  openModal('modal-alertas');
+}
+
 loadDash();
 </script>"""
     return base_html(content, session["user_name"], "dashboard")
-
-
-# ══════════════════════════════════════════════════════════════
-#  PÁGINA GENÉRICA
-# ══════════════════════════════════════════════════════════════
-
-def generic_page(titulo, active):
-    c = f"""<div class="page">
-  <div class="topbar"><div><div class="page-title">{titulo}</div></div></div>
-  <div class="alert alert-info"><div>Sección <b>{titulo}</b> — en desarrollo. Las funciones principales están en Renta Fija, Deudas y Metas de Ahorro.</div></div>
-  <div class="card"><div class="card-body"><div class="empty"><div class="empty-icon">📊</div>Próximamente</div></div></div>
-</div>"""
-    return base_html(c, session["user_name"], active)
 
 @app.route("/mercado")
 @login_required
@@ -2655,13 +2762,70 @@ def api_resumen():
             if 0<=dias<=30: alertas.append({"tipo":"warning","msg":f"{cdt['tipo']} vence en {dias} días."})
             elif dias<0: alertas.append({"tipo":"critical","msg":f"{cdt['tipo']} venció el {cdt['vence']}."})
         except: pass
+    # Ingresos activos productivos = RF + inmobiliario + RV + USD
+    ing_activos = rend_a + sum(r["canon"]*12 for r in inmo_r) + sum(
+        (r["cantidad"]*(r["precio_act"] or r["precio_comp"]))*0.05 for r in rv_r)
+
+    # INDICADORES FINANCIEROS (imagen de referencia)
+    # Ind 1: Nivel activos productivos = portafolio / (portafolio + ah) — meta > 50%
+    total_activos = port + float(ah)
+    ind1 = round(port / total_activos * 100, 1) if total_activos > 0 else 0
+
+    # Ind 2: Apalancamiento = deuda buena / total deudas (hipoteca, vehiculo = buena)
+    with get_db() as db2:
+        deu_buena = db2.execute(
+            "SELECT COALESCE(SUM(saldo_actual),0) s FROM deudas WHERE usuario=? AND estado='activa' AND tipo IN ('Crédito hipotecario','Leasing habitacional','Crédito vehículo')",
+            (u,)).fetchone()["s"]
+    ind2 = round(deu_buena / deu * 100, 1) if deu > 0 else 100
+
+    # Ind 3: Patrimonio = activos totales - pasivos totales
+    ind3 = round(total_activos - deu, 0)
+
+    # Ind 4: Ingresos activos / total ingresos — meta > 50%
+    ind4 = round(ing_activos / ing * 100, 1) if ing > 0 else 0
+
+    # Ind 5: Libertad financiera = ingresos activos - gastos fijos — meta > 0
+    ind5 = round(ing_activos - float(gas_f), 0)
+
+    # Scoring indicadores (puntos como en la imagen)
+    def puntos(val, meta, tipo="mayor"):
+        if tipo == "mayor":
+            if val >= meta * 1.0: return 3
+            if val >= meta * 0.7: return 1
+            return 0
+        else:  # menor
+            if val <= meta: return 3
+            return 0
+
+    score = {
+        "ind1": {"val": ind1, "meta": 50, "pts": 3 if ind1>=50 else (1 if ind1>=35 else 0), "label": "Activos productivos"},
+        "ind2": {"val": ind2, "meta": 50, "pts": 3 if ind2>=50 else (1 if ind2>=35 else 0), "label": "Apalancamiento"},
+        "ind3": {"val": ind3, "meta": 0,  "pts": 3 if ind3>0 else (1 if ind3>=-1000000 else 0), "label": "Patrimonio"},
+        "ind4": {"val": ind4, "meta": 50, "pts": 3 if ind4>=50 else (1 if ind4>=30 else 0), "label": "Ingresos activos"},
+        "ind5": {"val": ind5, "meta": 1,  "pts": 3 if ind5>0 else 0, "label": "Libertad financiera"},
+    }
+    total_pts = sum(v["pts"] for v in score.values())
+
     return jsonify({
         "ingresos":round(ing,0),"gastos":round(gas,0),"ahorro":round(ah,0),
         "ahorro_mensual":round(ah_m,0),"portafolio":round(port,0),
-        "deudas":round(deu,0),"deudas_cuota":round(deu_c,0),"neto":round(port-deu,0),
+        "deudas":round(deu,0),"deudas_cuota":round(deu_c,0),"neto":round(ind3,0),
+        "gas_fijo":round(float(gas_f),0),
         "rendimientos":{"total_diario":round(rend_d,2),"total_mensual":round(rend_m,0),
             "total_anual":round(rend_a,0),"rf_acumulado":round(rend_ac,0)},
         "alertas":alertas,
+        "indicadores":{
+            "activos_productivos": ind1,
+            "apalancamiento": ind2,
+            "patrimonio": ind3,
+            "ingresos_activos": ind4,
+            "libertad_financiera": ind5,
+            "ing_activos_cop": round(ing_activos,0),
+            "total_activos": round(total_activos,0),
+            "score": score,
+            "total_pts": total_pts,
+            "meta_pts": 15,
+        },
     })
 
 
@@ -3305,3 +3469,4 @@ if __name__ == "__main__":
     debug = os.environ.get("FLASK_DEBUG","true").lower() == "true"
     print(f"\n  FinTrack CO v4  →  http://localhost:{port}\n")
     app.run(host="0.0.0.0", port=port, debug=debug)
+
