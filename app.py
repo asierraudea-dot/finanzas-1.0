@@ -1310,33 +1310,35 @@ function filtrarRV(){
 }
 
 function renderRV(rows){
-  var t=document.getElementById('tabla-rv');
-  if(!rows.length){t.innerHTML='<tr><td colspan="11"><div class="empty">Sin posiciones con esos filtros</div></td></tr>';return;}
+  var t=document.getElementById(\'tabla-rv\');
+  if(!rows.length){
+    t.innerHTML=\'<tr><td colspan="11"><div class="empty">Sin posiciones con esos filtros</div></td></tr>\';
+    return;
+  }
+  var RCLS={bajo:\'tag-green\',moderado:\'tag-blue\',alto:\'tag-amber\',\'muy alto\':\'tag-red\'};
   t.innerHTML=rows.map(function(r){
     var gp=r.ganancia||0;
     var varH=r.var_dia_pct!=null
-      ?'<span class="'+(r.var_dia_pct>=0?'up':'dn')'">'+(r.var_dia_pct>=0?'+':'')+r.var_dia_pct.toFixed(2)+'%</span>'
-      :'<span style="color:var(--hint)">—</span>';
-    return '<tr>'
-      +'<td><div style="font-weight:600;font-size:13px">'+r.ticker+'</div>'
-        +'<div style="font-size:10px;color:var(--muted)">'+( r.nombre_mercado||r.tipo)+'</div>'
-        +'<span class="tag tag-gray" style="font-size:9px">'+r.tipo+'</span></td>'
-      +'<td><span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;background:var(--bg);border:.5px solid var(--border-s)">'+r.canal+'</span></td>'
-      +'<td class="mono t-right">'+r.cantidad+'</td>'
-      +'<td class="mono t-right">'+COP(r.precio_comp)+'</td>'
-      +'<td class="mono t-right" style="font-weight:600'+(r.precio_act_ok?';color:var(--green)':'')'">'+ COP(r.precio_act)+'</td>'
-      +'<td class="t-right">'+varH+'</td>'
-      +'<td class="mono t-right" style="font-weight:600">'+COP(r.valor_actual||0)+'</td>'
-      +'<td class="mono t-right"><span class="'+(gp>=0?'up':'dn')+'" style="font-weight:600">'+COP(gp)+'</span></td>'
-      +'<td class="mono t-right"><span class="'+(gp>=0?'up':'dn')'">'+ Pct(r.retorno_pct||0)+'</span></td>'
-      +'<td><span class="tag '+(RIESGO_CLS[r.riesgo]||'tag-gray')+'">'+r.riesgo+'</span></td>'
-      +'<td><div style="display:flex;gap:4px">'
-        +'<button class="btn btn-edit btn-xs" onclick="editarRV('+r.id+')">✏️</button>'
-        +'<button class="btn btn-danger btn-xs" onclick="elimRV('+r.id+')">🗑</button>'
-      +'</div></td></tr>';
-  }).join('');
+      ?\'<span class="\'+(r.var_dia_pct>=0?\'up\':\'dn\')+\'">\' +(r.var_dia_pct>=0?\'+\':\'\')+r.var_dia_pct.toFixed(2)+\'%</span>\'
+      :\'<span style="color:var(--hint)">—</span>\';
+    var pActStyle=\'font-weight:600\'+(r.precio_act_ok?\';color:var(--green)\':\'\');
+    return \'<tr>\'
+      +\'<td><b>\'+r.ticker+\'</b><br><span style="font-size:10px;color:var(--muted)">\'+( r.nombre_mercado||r.tipo)+\'</span><br><span class="tag tag-gray" style="font-size:9px">\'+r.tipo+\'</span></td>\'
+      +\'<td><span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;background:var(--bg);border:.5px solid var(--border-s)">\'+r.canal+\'</span></td>\'
+      +\'<td class="mono t-right">\'+r.cantidad+\'</td>\'
+      +\'<td class="mono t-right">\'+COP(r.precio_comp)+\'</td>\'
+      +\'<td class="mono t-right" style="\'+pActStyle+\'">\'+COP(r.precio_act||r.precio_comp)+\'</td>\'
+      +\'<td class="t-right">\'+varH+\'</td>\'
+      +\'<td class="mono t-right" style="font-weight:600">\'+COP(r.valor_actual||0)+\'</td>\'
+      +\'<td class="mono t-right"><span class="\'+(gp>=0?\'up\':\'dn\')+\'" style="font-weight:600">\'+COP(gp)+\'</span></td>\'
+      +\'<td class="mono t-right"><span class="\'+(gp>=0?\'up\':\'dn\')+\'">\'+Pct(r.retorno_pct||0)+\'</span></td>\'
+      +\'<td><span class="tag \'+(RCLS[r.riesgo]||\'tag-gray\')+\'">\'+r.riesgo+\'</span></td>\'
+      +\'<td><div style="display:flex;gap:4px">\'
+        +\'<button class="btn btn-edit btn-xs" onclick="editarRV(\'+r.id+\')">✏️</button>\'
+        +\'<button class="btn btn-danger btn-xs" onclick="elimRV(\'+r.id+\')">🗑</button>\'
+      +\'</div></td></tr>\';
+  }).join(\'\');
 }
-
 function calcKPIs(rows){
   var totV=0,totC=0,totVar=0,nVar=0;
   rows.forEach(function(r){
@@ -3271,6 +3273,16 @@ def api_usd_del(rid):
 # ══════════════════════════════════════════════════════════════
 #  API — MOVIMIENTOS DELETE
 # ══════════════════════════════════════════════════════════════
+
+@app.route("/api/movimientos/<int:rid>", methods=["PUT"])
+@login_required
+def api_mov_edit(rid):
+    d = request.get_json() or {}
+    with get_db() as db:
+        db.execute(
+            "UPDATE movimientos SET tipo=?,monto=?,fecha=?,ctx=? WHERE id=? AND usuario=?",
+            (d.get("tipo"), d.get("monto"), d.get("fecha"), d.get("ctx"), rid, uid()))
+    return jsonify({"ok": True})
 
 @app.route("/api/movimientos/<int:rid>", methods=["DELETE"])
 @login_required
