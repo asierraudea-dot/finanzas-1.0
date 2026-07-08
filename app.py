@@ -326,7 +326,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-seri
 .logo-mark svg{width:15px;height:15px;fill:#fff}
 .logo-name{font-size:13.5px;font-weight:600}.logo-ver{font-size:10px;color:var(--hint)}
 .nav-sec{font-size:9.5px;font-weight:700;color:var(--hint);letter-spacing:1.2px;text-transform:uppercase;padding:12px 14px 4px}
-.nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;font-size:13px;color:var(--muted);border-radius:7px;margin:1px 6px;transition:all .12s;text-decoration:none}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:13px;color:var(--muted);border-radius:7px;margin:1px 6px;transition:all .12s;text-decoration:none}
 .nav-item:hover{background:var(--bg);color:var(--text)}
 .nav-item.active{background:#0b0b0b;color:#fff}
 .sidebar-bottom{margin-top:auto;padding:14px;border-top:.5px solid var(--border)}
@@ -433,20 +433,26 @@ def base_html(content, nombre="", active="", flashes=None):
     if flashes:
         for cat, msg in flashes:
             cls = "alert-danger" if cat == "error" else "alert-ok"
-            ico = "⚠️" if cat == "error" else "✅"
+            ico = "⚠️" if cat == "error" else "Cumplida"
             fhtml += f'<div class="alert {cls}"><span>{ico}</span><div>{msg}</div></div>'
         fhtml = f'<div style="padding:12px 24px 0">{fhtml}</div>'
 
     nav_items = [
-        ("dashboard","📊","Dashboard"),("mercado","📈","Mercado"),
+        ("dashboard",      "ti-layout-dashboard",   "Dashboard"),
+        ("mercado",        "ti-trending-up",         "Mercado"),
         ("---","","Flujo personal"),
-        ("ingresos","💰","Ingresos"),("gastos","🧾","Gastos"),("ahorro","🏧","Ahorro"),
+        ("ingresos",       "ti-arrows-down-up",      "Ingresos"),
+        ("gastos",         "ti-receipt",             "Gastos"),
+        ("ahorro",         "ti-piggy-bank",          "Ahorro"),
         ("---","","Portafolio"),
-        ("seguimiento","📉","Seguimiento"),("renta_fija","🏦","Renta fija"),
-        ("renta_variable","📊","Renta variable"),("inmobiliario","🏢","Inmobiliario"),
-        ("dolares","💵","Dólares"),("rendimientos","📅","Rendimientos"),
+        ("seguimiento",    "ti-chart-line",          "Seguimiento"),
+        ("renta_fija",     "ti-building-bank",       "Renta fija"),
+        ("renta_variable", "ti-chart-candle",        "Renta variable"),
+        ("inmobiliario",   "ti-building",            "Inmobiliario"),
+        ("dolares",        "ti-currency-dollar",     "Dólares"),
+        ("rendimientos",   "ti-calendar-stats",      "Rendimientos"),
         ("---","","Pasivos"),
-        ("deudas","💳","Deudas"),
+        ("deudas",         "ti-credit-card",         "Deudas"),
     ]
     nav_html = ""
     for item in nav_items:
@@ -454,7 +460,9 @@ def base_html(content, nombre="", active="", flashes=None):
             nav_html += f'<div class="nav-sec">{item[2]}</div>'
         else:
             cls = "active" if item[0] == active else ""
-            nav_html += f'<a class="nav-item {cls}" href="/{item[0]}">{item[1]} {item[2]}</a>'
+            nav_html += (f'<a class="nav-item {cls}" href="/{item[0]}">'
+                         f'<i class="ti {item[1]}" aria-hidden="true" style="font-size:15px;flex-shrink:0"></i>'
+                         f'{item[2]}</a>')
 
     av = nombre[0].upper() if nombre else "U"
     return f"""<!DOCTYPE html>
@@ -487,7 +495,7 @@ def auth_html(body, flashes=None):
     if flashes:
         for cat, msg in flashes:
             cls = "alert-danger" if cat == "error" else "alert-ok"
-            ico = "⚠️" if cat == "error" else "✅"
+            ico = "⚠️" if cat == "error" else "Cumplida"
             fhtml += f'<div class="alert {cls}"><span>{ico}</span><div>{msg}</div></div>'
     return f"""<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
@@ -691,7 +699,7 @@ async function loadDash(){
     var ap=document.getElementById('alertas-panel');
     if(r.alertas&&r.alertas.length){ap.innerHTML=r.alertas.map(function(a){return'<div class="alert '+(a.tipo==='critical'?'alert-danger':a.tipo==='warning'?'alert-warn':'alert-info')+'"><span>'+(a.tipo==='critical'?'🔴':'⚠️')+'</span><div>'+a.msg+'</div></div>';}).join('');
       var crits=r.alertas.filter(function(a){return a.tipo==='critical'||a.tipo==='warning';}).length;
-      if(crits>0)document.getElementById('bell-btn').textContent='🔔 '+crits+' alertas';}
+      if(crits>0)document.getElementById('bell-btn').textContent=crits+' alertas';}
   }catch(e){console.error(e);}
 }
 function openAlerts(){if(!RESUMEN)return;var body=document.getElementById('modal-alertas-body');var al=RESUMEN.alertas||[];
@@ -710,7 +718,7 @@ loadDash();
 def generic_page(titulo, active):
     c = f"""<div class="page">
   <div class="topbar"><div><div class="page-title">{titulo}</div></div></div>
-  <div class="alert alert-info">ℹ️ <div>Sección <b>{titulo}</b> — en desarrollo. Las funciones principales están en Renta Fija, Deudas y Metas de Ahorro.</div></div>
+  <div class="alert alert-info"><div>Sección <b>{titulo}</b> — en desarrollo. Las funciones principales están en Renta Fija, Deudas y Metas de Ahorro.</div></div>
   <div class="card"><div class="card-body"><div class="empty"><div class="empty-icon">📊</div>Próximamente</div></div></div>
 </div>"""
     return base_html(c, session["user_name"], active)
@@ -720,7 +728,7 @@ def generic_page(titulo, active):
 def mercado():
     c = """<div class="page">
   <div class="topbar"><div><div class="page-title">Mercado</div><div class="page-sub">Indicadores en tiempo real</div></div>
-    <div style="display:flex;gap:8px"><button class="btn btn-sm" onclick="cargar()">↺ Actualizar</button></div></div>
+    <div style="display:flex;gap:8px"><button class="btn btn-sm" onclick="cargar()">Actualizar</button></div></div>
   <div class="kpi-grid g4">
     <div class="kpi"><div class="kpi-label">USD/COP (TRM)</div><div class="kpi-val sm" id="m-usd">…</div><div class="kpi-sub" id="m-us">Tiempo real</div></div>
     <div class="kpi"><div class="kpi-label">Oro XAU/USD</div><div class="kpi-val sm" id="m-oro">…</div><div class="kpi-sub">Por onza</div></div>
@@ -785,9 +793,9 @@ def renta_fija():
     c = """<div class="page">
   <div class="topbar">
     <div><div class="page-title">Renta Fija</div><div class="page-sub">CDT · TES · Cuentas remuneradas · Fiducias</div></div>
-    <div><button class="btn btn-primary btn-sm" onclick="resetRF();openModal('modal-rf')">+ Nueva inversión</button></div>
+    <div><button class="btn btn-primary btn-sm" onclick="resetRF();openModal('modal-rf')">Nueva inversión</button></div>
   </div>
-  <div class="alert alert-info">ℹ️ <div><b>Períodos:</b> <b style="color:#166534">Diario</b> → Nu, Lulo, Nequi cajita · <b>Mensual</b> → CDT mensual, SiRenta · <b>Vencimiento</b> → CDT acumulado</div></div>
+  <div class="alert alert-info"><div><b>Períodos:</b> <b style="color:#166534">Diario</b> → Nu, Lulo, Nequi cajita · <b>Mensual</b> → CDT mensual, SiRenta · <b>Vencimiento</b> → CDT acumulado</div></div>
   <div class="kpi-grid g3">
     <div class="kpi"><div class="kpi-label">Total RF activo</div><div class="kpi-val" id="rf-tot">$0</div></div>
     <div class="kpi"><div class="kpi-label">Rend. diario total</div><div class="kpi-val up" id="rf-dia">$0</div></div>
@@ -852,7 +860,7 @@ def renta_fija():
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="resetRF();closeModal('modal-rf')">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarRF()">💾 Guardar</button>
+      <button class="btn btn-primary" onclick="guardarRF()">Guardar</button>
     </div>
   </div>
 </div>
@@ -956,7 +964,7 @@ def ahorro():
     c = """<div class="page">
   <div class="topbar">
     <div><div class="page-title">Metas de Ahorro</div><div class="page-sub">Emergencia · Viaje · Educación · Vivienda · Retiro</div></div>
-    <div><button class="btn btn-primary btn-sm" onclick="resetMeta();openModal('modal-meta')">+ Nueva meta</button></div>
+    <div><button class="btn btn-primary btn-sm" onclick="resetMeta();openModal('modal-meta')">Nueva meta</button></div>
   </div>
 
   <div class="kpi-grid g4">
@@ -1010,13 +1018,13 @@ def ahorro():
       <div class="form-grid g2f">
         <div class="form-group"><label>Nombre de la meta</label><input type="text" id="meta-nom" placeholder="Fondo emergencia / Viaje a Europa…"/></div>
         <div class="form-group"><label>Tipo de meta</label><select id="meta-tipo">
-          <option value="emergencia">🚨 Fondo de emergencia</option>
-          <option value="viaje">✈️ Viaje</option>
-          <option value="educacion">🎓 Educación</option>
-          <option value="vivienda">🏠 Vivienda</option>
-          <option value="retiro">🏖️ Retiro / pensión</option>
-          <option value="ahorro">💰 Ahorro general</option>
-          <option value="otro">📦 Otro</option>
+          <option value="emergencia">Fondo de emergencia</option>
+          <option value="viaje">Viaje</option>
+          <option value="educacion">Educación</option>
+          <option value="vivienda">Vivienda</option>
+          <option value="retiro">Retiro / pensión</option>
+          <option value="ahorro">Ahorro general</option>
+          <option value="otro">Otro</option>
         </select></div>
         <div class="form-group"><label>Objetivo (COP $)</label><input type="number" id="meta-obj" placeholder="15000000"/></div>
         <div class="form-group"><label>Ahorrado actual ($)</label><input type="number" id="meta-act" placeholder="5000000"/></div>
@@ -1036,7 +1044,7 @@ def ahorro():
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="resetMeta();closeModal('modal-meta')">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarMeta()">💾 Guardar</button>
+      <button class="btn btn-primary" onclick="guardarMeta()">Guardar</button>
     </div>
   </div>
 </div>
@@ -1050,9 +1058,9 @@ def ahorro():
       <input type="hidden" id="mov-meta-id"/>
       <div class="form-grid" style="gap:14px">
         <div class="form-group"><label>Tipo de movimiento</label><select id="mov-meta-tipo">
-          <option value="deposito_meta">➕ Depósito / Abono a la meta</option>
-          <option value="retiro_meta">➖ Retiro parcial</option>
-          <option value="ajuste_meta">✏️ Corrección / ajuste de saldo</option>
+          <option value="deposito_meta">Depósito / Abono a la meta</option>
+          <option value="retiro_meta">Retiro parcial</option>
+          <option value="ajuste_meta">Corrección / ajuste de saldo</option>
         </select></div>
         <div class="form-group"><label>Monto (COP $)</label><input type="number" id="mov-meta-monto" placeholder="500000"/></div>
         <div class="form-group"><label>Fecha</label><input type="date" id="mov-meta-fecha"/></div>
@@ -1061,13 +1069,13 @@ def ahorro():
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('modal-mov-meta')">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarMovMeta()">💾 Guardar</button>
+      <button class="btn btn-primary" onclick="guardarMovMeta()">Guardar</button>
     </div>
   </div>
 </div>
 
 <script>
-var TIPO_META_ICONS={emergencia:'🚨',viaje:'✈️',educacion:'🎓',vivienda:'🏠',retiro:'🏖️',ahorro:'💰',otro:'📦'};
+var TIPO_META_ICONS={};
 var TIPO_META_LABELS={emergencia:'Fondo emergencia',viaje:'Viaje',educacion:'Educación',vivienda:'Vivienda',retiro:'Retiro/Pensión',ahorro:'Ahorro general',otro:'Otro'};
 var ESTADO_META_COLORS={activa:'tag-blue',cumplida:'tag-green',pausada:'tag-amber',cancelada:'tag-red'};
 
@@ -1108,11 +1116,11 @@ async function cargarMetas(){
     var pct=Math.min(100,r.pct||0);
     var colProg=pct>=100?'var(--green)':pct>=60?'var(--blue)':'var(--amber)';
     var mr=r.mensual>0&&r.actual<r.objetivo?Math.ceil((r.objetivo-r.actual)/r.mensual):null;
-    var icon=TIPO_META_ICONS[r.tipo_meta]||'💰';
+    var icon='';
     var label=TIPO_META_LABELS[r.tipo_meta]||r.tipo_meta;
     return '<div class="card" style="margin-bottom:12px"><div class="card-body">'
       +'<div style="display:flex;align-items:flex-start;gap:14px">'
-        +'<div style="font-size:28px;line-height:1">'+icon+'</div>'
+        
         +'<div style="flex:1">'
           +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
             +'<div style="font-size:14px;font-weight:600">'+r.nombre+'</div>'
@@ -1127,10 +1135,10 @@ async function cargarMetas(){
           +'</div>'
           +'<div class="prog" style="height:8px;margin-bottom:8px"><div class="prog-fill" style="width:'+Math.min(100,pct)+'%;background:'+colProg+'"></div></div>'
           +'<div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11.5px;color:var(--muted)">'
-            +(r.fecha?'<span>📅 Fecha límite: '+fmtFecha(r.fecha)+'</span>':'')
-            +(mr?'<span>🕐 Faltan ~'+mr+' meses</span>':'')
-            +(r.tipo_cta?'<span>🏦 '+r.tipo_cta+'</span>':'')
-            +(r.notas?'<span>📝 '+r.notas+'</span>':'')
+            +(r.fecha?'<span>Fecha límite: '+fmtFecha(r.fecha)+'</span>':'')
+            +(mr?'<span>Faltan ~'+mr+' meses</span>':'')
+            +(r.tipo_cta?'<span>'+r.tipo_cta+'</span>':'')
+            +(r.notas?'<span>'+r.notas+'</span>':'')
           +'</div>'
         +'</div>'
         +'<div style="display:flex;flex-direction:column;gap:6px">'
@@ -1227,7 +1235,7 @@ def deudas():
     c = """<div class="page">
   <div class="topbar">
     <div><div class="page-title">Gestión de Deudas</div><div class="page-sub">Método avalancha · Abonos a capital · Ahorro en intereses</div></div>
-    <div><button class="btn btn-primary btn-sm" onclick="resetDeuda();openModal('modal-deu')">+ Nueva deuda</button></div>
+    <div><button class="btn btn-primary btn-sm" onclick="resetDeuda();openModal('modal-deu')">Nueva deuda</button></div>
   </div>
 
   <div class="kpi-grid g4">
@@ -1237,7 +1245,7 @@ def deudas():
     <div class="kpi"><div class="kpi-label">Ahorro intereses YTD</div><div class="kpi-val up" id="d-aho">$0</div><div class="kpi-sub">Por abonos a capital</div></div>
   </div>
 
-  <div class="alert alert-info">💡 <div><b>Método avalancha:</b> paga primero la deuda con mayor tasa. <b>Abono a capital</b> reduce el saldo sin contar como cuota — calcula automáticamente cuántos intereses te ahorras.</div></div>
+  <div class="alert alert-info"><div><b>Método avalancha:</b> paga primero la deuda con mayor tasa. <b>Abono a capital</b> reduce el saldo sin contar como cuota — calcula automáticamente cuántos intereses te ahorras.</div></div>
 
   <div id="deudas-container"></div>
 </div>
@@ -1266,9 +1274,9 @@ def deudas():
         <div class="form-group"><label>Cuotas ya pagadas</label><input type="number" id="deu-cuotas-pag" placeholder="12" oninput="calcDeuPreview()"/></div>
         <div class="form-group"><label>Tasa interés E.A. (%)</label><input type="number" id="deu-tasa" step="0.1" placeholder="28.5" oninput="calcDeuPreview()"/></div>
         <div class="form-group"><label>Prioridad (avalancha)</label><select id="deu-prior">
-          <option value="alta">🔴 Alta — mayor tasa</option>
-          <option value="media" selected>🟡 Media</option>
-          <option value="baja">🟢 Baja — menor tasa</option>
+          <option value="alta">Alta — mayor tasa</option>
+          <option value="media" selected>Media</option>
+          <option value="baja">Baja — menor tasa</option>
         </select></div>
         <div class="form-group"><label>Estado</label><select id="deu-estado">
           <option value="activa">Activa</option>
@@ -1297,7 +1305,7 @@ def deudas():
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="resetDeuda();closeModal('modal-deu')">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarDeuda()">💾 Guardar</button>
+      <button class="btn btn-primary" onclick="guardarDeuda()">Guardar</button>
     </div>
   </div>
 </div>
@@ -1314,11 +1322,11 @@ def deudas():
       <input type="hidden" id="mov-deu-cuota"/>
       <div class="form-grid" style="gap:14px">
         <div class="form-group"><label>Tipo de movimiento</label><select id="mov-deu-tipo" onchange="onChangeTipoMov()">
-          <option value="pago_cuota">💳 Pago cuota normal</option>
-          <option value="abono_capital">🎯 Abono extra a capital</option>
-          <option value="ajuste_saldo">✏️ Ajuste de saldo (refinanciación)</option>
-          <option value="cambio_condiciones">🔄 Cambio de tasa o cuota</option>
-          <option value="liquidacion">✅ Liquidación / cancelación total</option>
+          <option value="pago_cuota">Pago cuota normal</option>
+          <option value="abono_capital">Abono extra a capital</option>
+          <option value="ajuste_saldo">Ajuste de saldo (refinanciación)</option>
+          <option value="cambio_condiciones">Cambio de tasa / cuota</option>
+          <option value="liquidacion">Liquidación / cancelación total</option>
         </select></div>
         <div class="form-group"><label>Monto (COP $)</label><input type="number" id="mov-deu-monto" placeholder="500000" oninput="calcAhorroAbono()"/></div>
         <div class="form-group" id="row-nueva-tasa" style="display:none"><label>Nueva tasa E.A. (%) — si cambió</label><input type="number" id="mov-deu-nueva-tasa" step="0.1" placeholder="25.0"/></div>
@@ -1335,7 +1343,7 @@ def deudas():
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('modal-mov-deu')">Cancelar</button>
-      <button class="btn btn-primary" onclick="guardarMovDeu()">💾 Registrar</button>
+      <button class="btn btn-primary" onclick="guardarMovDeu()">Registrar</button>
     </div>
   </div>
 </div>
@@ -1452,7 +1460,7 @@ async function cargarDeudas(){
     var pagoHtml=dp!==null&&dp!==undefined?'<span class="tag '+(dp<0?'tag-red':dp<=5?'tag-amber':'tag-gray')+'">Pago '+(dp<0?'vencido hace '+Math.abs(dp)+'d':dp===0?'hoy':dp+'d')+'</span>':'';
     return '<div class="card" style="margin-bottom:12px"><div class="card-body">'
       +'<div style="display:flex;align-items:flex-start;gap:12px">'
-        +'<div style="font-size:28px;line-height:1">💳</div>'
+        
         +'<div style="flex:1">'
           +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">'
             +'<b style="font-size:14px">'+r.entidad+' — '+r.tipo+'</b>'
@@ -1477,15 +1485,15 @@ async function cargarDeudas(){
             +'<div class="prog"><div class="prog-fill" style="width:'+Math.min(100,pct)+'%;background:var(--green)"></div></div>'
           +'</div>'
           +'<div style="font-size:11.5px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap">'
-            +(r.fecha_inicio?'<span>📅 Inicio: '+fmtFecha(r.fecha_inicio)+'</span>':'')
-            +(r.fin_normal?'<span>🏁 Fin estimado: '+fmtFecha(r.fin_normal)+'</span>':'')
-            +(r.int_mes_actual?'<span>💸 Interés del mes: '+COP(r.int_mes_actual)+'</span>':'')
+            +(r.fecha_inicio?'<span>Inicio: '+fmtFecha(r.fecha_inicio)+'</span>':'')
+            +(r.fin_normal?'<span>Fin estimado: '+fmtFecha(r.fin_normal)+'</span>':'')
+            +(r.int_mes_actual?'<span>Interés del mes: '+COP(r.int_mes_actual)+'</span>':'')
           +'</div>'
         +'</div>'
         +'<div style="display:flex;flex-direction:column;gap:6px">'
-          +(r.estado==='activa'?'<button class="btn btn-primary btn-xs" onclick="abrirMovDeu('+r.id+',\''+((r.entidad||r.tipo).replace(/'/g,"\\\'"))+'\','+r.saldo_actual+','+r.tasa_ea+','+r.cuota+')" title="Registrar pago o abono">💳 Movimiento</button>':'')
+          +(r.estado==='activa'?'<button class="btn btn-primary btn-xs" onclick="abrirMovDeu('+r.id+',\''+((r.entidad||r.tipo).replace(/'/g,"\\\'"))+'\','+r.saldo_actual+','+r.tasa_ea+','+r.cuota+')" title="Registrar pago o abono">Movimiento</button>':'')
           +'<button class="btn btn-edit btn-xs" onclick="editarDeuda('+r.id+')">✏️ Editar</button>'
-          +(r.estado==='activa'?'<button class="btn btn-success btn-xs" onclick="liquidarDeuda('+r.id+')">✅ Liquidar</button>':'')
+          +(r.estado==='activa'?'<button class="btn btn-success btn-xs" onclick="liquidarDeuda('+r.id+')">Liquidar</button>':'')
           +'<button class="btn btn-danger btn-xs" onclick="elimDeuda('+r.id+')">🗑</button>'
         +'</div>'
       +'</div>'
@@ -1563,7 +1571,7 @@ def rendimientos_page():
     c = """<div class="page">
   <div class="topbar">
     <div><div class="page-title">Rendimientos por período</div><div class="page-sub">Diario · Mensual · Anual · Acumulado real</div></div>
-    <div><button class="btn btn-sm" onclick="cargar()">↺ Actualizar</button></div>
+    <div><button class="btn btn-sm" onclick="cargar()">Actualizar</button></div>
   </div>
   <div class="kpi-grid g4">
     <div class="kpi"><div class="kpi-label">Rend. hoy (diario)</div><div class="kpi-val up" id="kr-d">$0</div></div>
@@ -1571,7 +1579,7 @@ def rendimientos_page():
     <div class="kpi"><div class="kpi-label">Rend. anual proyectado</div><div class="kpi-val up" id="kr-a">$0</div></div>
     <div class="kpi"><div class="kpi-label">Acumulado real</div><div class="kpi-val up" id="kr-ac">$0</div><div class="kpi-sub">Desde fecha de inicio</div></div>
   </div>
-  <div class="alert alert-info">ℹ️ <div><b>Capitalización diaria</b> (Nu, Lulo, Nequi, Ualá): <b>Monto × ((1+EA)^(1/365) − 1)</b></div></div>
+  <div class="alert alert-info"><div><b>Capitalización diaria</b> (Nu, Lulo, Nequi, Ualá): <b>Monto × ((1+EA)^(1/365) − 1)</b></div></div>
   <div class="card">
     <div class="card-header"><div><div class="card-title">Detalle por inversión</div><div class="card-sub">Ordenado por rendimiento diario</div></div></div>
     <div class="table-wrap"><table>
